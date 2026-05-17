@@ -78,12 +78,12 @@ const useAppContext = () => {
 // --- Sub-components ---
 
 const NavBar = ({ activeScreen, onScreenChange }: { activeScreen: AppScreen, onScreenChange: (s: AppScreen) => void }) => {
-  const tabs: { id: AppScreen, label: string, icon: any }[] = [
-    { id: 'home', label: 'Início', icon: Home },
-    { id: 'lists', label: 'Listas', icon: List },
-    { id: 'recipes', label: 'Receitas', icon: ChefHat },
-    { id: 'family', label: 'Família', icon: Users },
-    { id: 'settings', label: 'Definições', icon: SettingsIcon },
+  const tabs: { id: AppScreen, label: string, icon: any, activeColor: string, activeBg: string }[] = [
+    { id: 'home', label: 'Início', icon: Home, activeColor: 'text-[#3b82f6]', activeBg: 'bg-[#3b82f6]/10' },
+    { id: 'lists', label: 'Listas', icon: List, activeColor: 'text-[#10b981]', activeBg: 'bg-[#10b981]/10' },
+    { id: 'recipes', label: 'Receitas', icon: ChefHat, activeColor: 'text-[#f59e0b]', activeBg: 'bg-[#f59e0b]/10' },
+    { id: 'family', label: 'Família', icon: Users, activeColor: 'text-[#8b5cf6]', activeBg: 'bg-[#8b5cf6]/10' },
+    { id: 'settings', label: 'Definições', icon: SettingsIcon, activeColor: 'text-[#ec4899]', activeBg: 'bg-[#ec4899]/10' },
   ];
 
   if (activeScreen === 'onboarding') return null;
@@ -97,9 +97,9 @@ const NavBar = ({ activeScreen, onScreenChange }: { activeScreen: AppScreen, onS
           <button 
             key={tab.id}
             onClick={() => onScreenChange(tab.id)}
-            className={`flex flex-col items-center gap-1 transition-all ${isActive ? 'text-primary scale-110' : 'text-outline hover:text-on-surface-variant'}`}
+            className={`flex flex-col items-center gap-1 transition-all ${isActive ? `${tab.activeColor} scale-110` : 'text-outline hover:text-on-surface-variant'}`}
           >
-            <div className={`p-2 rounded-2xl transition-all ${isActive ? 'bg-primary-container/20' : ''}`}>
+            <div className={`p-2 rounded-2xl transition-all ${isActive ? tab.activeBg : ''}`}>
               <Icon size={24} strokeWidth={isActive ? 2.5 : 2} />
             </div>
             <span className="text-[10px] font-semibold uppercase tracking-wider">{tab.label}</span>
