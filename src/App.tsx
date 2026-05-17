@@ -1,8 +1,7 @@
 "use client";
 import { useState, useEffect, createContext, useContext } from 'react';
 import { signIn, signOut, useSession } from 'next-auth/react';
-import { GoogleGenAI } from '@google/genai';
-import { getLists, createList as dbCreateList, deleteList as dbDeleteList, addItem as dbAddItem, toggleItemChecked as dbToggleItemChecked, updateItemQuantity as dbUpdateItemQuantity, updateItemName as dbUpdateItemName, deleteItem as dbDeleteItem, getRecipes, saveRecipe as dbSaveRecipe, deleteRecipe as dbDeleteRecipe, getActivities, logActivity } from '@/app/actions';
+import { getLists, createList as dbCreateList, deleteList as dbDeleteList, addItem as dbAddItem, toggleItemChecked as dbToggleItemChecked, updateItemQuantity as dbUpdateItemQuantity, updateItemName as dbUpdateItemName, deleteItem as dbDeleteItem, getRecipes, saveRecipe as dbSaveRecipe, deleteRecipe as dbDeleteRecipe, getActivities, logActivity, generateRecipeWithAI } from '@/app/actions';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Home, 
@@ -216,35 +215,8 @@ const AiRecipeGenerator = () => {
     if (!prompt.trim()) return;
     setLoading(true);
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: `You are a helpful chef from Portugal. The user wants a recipe based on: "${prompt}".
-        CRITICAL: You must write EVERYTHING in strict European Portuguese (Português de Portugal). DO NOT use Brazilian terms (e.g. use 'frigorífico' instead of 'geladeira', 'natas' instead of 'creme de leite', 'fiambre' instead of 'presunto', etc.).
-        Return ONLY a JSON object with the following structure:
-        {
-          "title": "Recipe Name",
-          "description": "Short description",
-          "emoji": "🍲",
-          "ingredients": [
-            { "name": "Ingredient 1", "quantity": "1 cup", "category": "Despensa" },
-            { "name": "Ingredient 2", "quantity": "2", "category": "Frutas e Legumes" }
-          ],
-          "instructions": [
-            "Passo 1...",
-            "Passo 2..."
-          ]
-        }`,
-        config: { responseMimeType: "application/json" }
-      });
-      if (response.text) {
-        let rawText = response.text.trim();
-        if (rawText.startsWith('```')) {
-          rawText = rawText.replace(/^```(?:json)?\n?/, '').replace(/```$/, '').trim();
-        }
-        const data = JSON.parse(rawText);
-        setRecipe(data);
-      }
+      const data = await generateRecipeWithAI(prompt);
+      setRecipe(data);
     } catch (e: any) {
       console.error('Gemini Error:', e);
       alert('Erro ao gerar receita: ' + (e.message || 'Erro desconhecido'));
