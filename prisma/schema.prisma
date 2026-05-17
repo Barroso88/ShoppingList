@@ -1,13 +1,78 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  role      String   @default("Membro") // Pode ser 'Admin' ou 'Membro'
+  avatar    String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  lists     ShoppingList[]
+}
+
+model ShoppingList {
+  id          String   @id @default(uuid())
+  name        String
+  color       String   @default("#ff6b6b")
+  icon        String   @default("List")
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relação com o utilizador que criou a lista (opcional para listas partilhadas da família)
+  ownerId     String?
+  owner       User?    @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  
+  // Relação com os itens
+  items       ShoppingItem[]
+}
+
+model ShoppingItem {
+  id          String   @id @default(uuid())
+  name        String
+  quantity    String   @default("1")
+  category    String   @default("Outros")
+  checked     Boolean  @default(false)
+  isUrgent    Boolean  @default(false)
+  notes       String?
+  
+  // Relaciona o item à lista correspondente
+  listId      String
+  list        ShoppingList @relation(fields: [listId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model SavedRecipe {
+  id           String   @id @default(uuid())
+  title        String
+  description  String
+  emoji        String   @default("🍲")
+  
+  // Guardamos a estrutura da receita em JSON para maior flexibilidade
+  ingredients  Json     // Formato esperado: [{ "name": "...", "quantity": "...", "category": "..." }]
+  instructions Json     // Formato esperado: ["Passo 1", "Passo 2", "Passo 3"]
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Activity {
+  id          String   @id @default(uuid())
+  action      String
+  target      String
+  userName    String
+  
+  createdAt   DateTime @default(now())
 }
