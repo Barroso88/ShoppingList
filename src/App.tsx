@@ -386,8 +386,10 @@ const Dashboard = () => {
     recognition.start();
   };
 
-  const handleCreateList = async (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && newListName.trim()) {
+  const handleCreateList = async (e?: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e && e.key !== 'Enter') return;
+    
+    if (newListName.trim()) {
       const name = newListName.trim();
       const tempId = 'temp_' + Math.random().toString(36).substr(2, 9);
       
@@ -448,7 +450,13 @@ const Dashboard = () => {
 
       <div className="relative mb-10">
         <div className="flex items-center bg-surface-container-low rounded-full h-16 px-6 soft-shadow border border-outline-variant/20">
-          <Plus className="text-primary mr-4" size={24} />
+          <button 
+            onClick={() => handleCreateList()} 
+            disabled={!newListName.trim()}
+            className={`mr-4 transition-all ${newListName.trim() ? 'text-primary scale-110 active:scale-90' : 'text-outline/40 cursor-default'}`}
+          >
+            <Plus size={24} />
+          </button>
           <input 
             type="text" 
             value={newListName}
