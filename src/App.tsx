@@ -512,9 +512,14 @@ const ListsOverview = () => {
 
   return (
     <div className="pb-32 pt-16 px-6">
-      <header className="flex justify-between items-center mb-10">
-        <h2 className="text-3xl font-bold tracking-tight text-on-surface">As tuas Listas</h2>
-        <button onClick={() => setIsCreatingList(true)} className="w-12 h-12 bg-primary text-white rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-all">
+      <header className="flex justify-between items-start mb-10">
+        <div>
+          <div className="w-14 h-14 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mb-4">
+            <List size={28} />
+          </div>
+          <h2 className="text-3xl font-bold tracking-tight text-on-surface">As tuas Listas</h2>
+        </div>
+        <button onClick={() => setIsCreatingList(true)} className="w-12 h-12 bg-primary text-white rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-all mt-2">
           <Plus size={24} />
         </button>
       </header>
@@ -1122,8 +1127,13 @@ const RecipesOverview = () => {
 
   return (
     <div className="pb-32 pt-16 px-6">
-      <header className="flex justify-between items-center mb-10">
-        <h2 className="text-3xl font-bold tracking-tight text-on-surface">As tuas Receitas</h2>
+      <header className="flex justify-between items-start mb-10">
+        <div>
+          <div className="w-14 h-14 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mb-4">
+            <ChefHat size={28} />
+          </div>
+          <h2 className="text-3xl font-bold tracking-tight text-on-surface">As tuas Receitas</h2>
+        </div>
       </header>
 
       {recipes.length === 0 ? (
