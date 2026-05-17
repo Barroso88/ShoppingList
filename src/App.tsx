@@ -449,7 +449,16 @@ const Dashboard = () => {
   const startListening = () => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      alert("O teu browser não suporta reconhecimento de voz.");
+      alert("O teu browser não suporta reconhecimento de voz (no iPhone, por favor usa o Safari standard).");
+      return;
+    }
+
+    if (!window.isSecureContext && window.location.hostname !== 'localhost') {
+      alert(
+        "Acesso ao Microfone Bloqueado!\n\n" +
+        "O Safari no iPhone exige uma ligação segura (HTTPS) para permitir o uso do microfone pela rede local.\n\n" +
+        "Para usar a voz no teu iPhone, liga-te através de localhost, ativa HTTPS ou usa uma ferramenta como o ngrok."
+      );
       return;
     }
 
@@ -466,9 +475,26 @@ const Dashboard = () => {
     };
 
     recognition.onend = () => setIsListening(false);
-    recognition.onerror = () => setIsListening(false);
+    recognition.onerror = (event: any) => {
+      setIsListening(false);
+      if (event.error === 'not-allowed') {
+        alert(
+          "Permissão de Microfone Recusada!\n\n" +
+          "Garante que permitiste o acesso ao microfone nas definições do teu iPhone para este site."
+        );
+      }
+    };
 
-    recognition.start();
+    try {
+      recognition.start();
+    } catch (e: any) {
+      console.error("Erro ao iniciar reconhecimento de voz:", e);
+      setIsListening(false);
+      alert(
+        "Não foi possível ativar o microfone.\n\n" +
+        "Garante que estás a usar HTTPS (ligação segura) e que permitiste o acesso ao microfone."
+      );
+    }
   };
 
   const handleCreateList = async (e?: React.KeyboardEvent<HTMLInputElement>) => {
@@ -846,7 +872,16 @@ const ListDetail = ({ isSupermarketMode, setIsSupermarketMode }: { isSupermarket
   const toggleListening = () => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      alert("A funcionalidade de voz não é suportada neste navegador.");
+      alert("A funcionalidade de voz não é suportada neste navegador (no iPhone, por favor usa o Safari standard).");
+      return;
+    }
+
+    if (!window.isSecureContext && window.location.hostname !== 'localhost') {
+      alert(
+        "Acesso ao Microfone Bloqueado!\n\n" +
+        "Por motivos de segurança, o teu iPhone (Safari) exige uma ligação segura (HTTPS) para permitir o uso do microfone pela rede local.\n\n" +
+        "Para usar a voz no teu iPhone, liga-te através de localhost, ativa HTTPS ou usa uma ferramenta como o ngrok."
+      );
       return;
     }
 
@@ -860,6 +895,7 @@ const ListDetail = ({ isSupermarketMode, setIsSupermarketMode }: { isSupermarket
 
     const recognition = new SpeechRecognition();
     recognition.lang = 'pt-PT';
+    recognition.continuous = false;
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
     recognitionRef.current = recognition;
@@ -919,13 +955,29 @@ const ListDetail = ({ isSupermarketMode, setIsSupermarketMode }: { isSupermarket
     recognition.onerror = (event: any) => {
       console.error("Erro no reconhecimento de voz:", event.error);
       setIsListening(false);
+      
+      if (event.error === 'not-allowed') {
+        alert(
+          "Permissão de Microfone Recusada!\n\n" +
+          "Garante que permitiste o acesso ao microfone nas definições do teu iPhone para este site."
+        );
+      }
     };
 
     recognition.onend = () => {
       setIsListening(false);
     };
 
-    recognition.start();
+    try {
+      recognition.start();
+    } catch (e: any) {
+      console.error("Erro ao iniciar reconhecimento de voz:", e);
+      setIsListening(false);
+      alert(
+        "Não foi possível ativar o microfone.\n\n" +
+        "Garante que estás a usar HTTPS (ligação segura) e que permitiste o acesso ao microfone."
+      );
+    }
   };
 
   const toggleItem = async (id: string) => {
@@ -1899,9 +1951,19 @@ const Pantry = () => {
   const startListening = () => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      alert("O teu browser não suporta reconhecimento de voz.");
+      alert("O teu browser não suporta reconhecimento de voz (no iPhone, por favor usa o Safari standard).");
       return;
     }
+
+    if (!window.isSecureContext && window.location.hostname !== 'localhost') {
+      alert(
+        "Acesso ao Microfone Bloqueado!\n\n" +
+        "O Safari no iPhone exige uma ligação segura (HTTPS) para permitir o uso do microfone pela rede local.\n\n" +
+        "Para usar a voz no teu iPhone, liga-te através de localhost, ativa HTTPS ou usa uma ferramenta como o ngrok."
+      );
+      return;
+    }
+
     const recognition = new SpeechRecognition();
     recognition.lang = 'pt-PT';
     recognition.continuous = false;
@@ -1912,9 +1974,29 @@ const Pantry = () => {
       const transcript = event.results[0][0].transcript;
       setNewItemName(prev => prev ? `${prev} ${transcript}` : transcript);
     };
+    
     recognition.onend = () => setIsListening(false);
-    recognition.onerror = () => setIsListening(false);
-    recognition.start();
+    
+    recognition.onerror = (event: any) => {
+      setIsListening(false);
+      if (event.error === 'not-allowed') {
+        alert(
+          "Permissão de Microfone Recusada!\n\n" +
+          "Garante que permitiste o acesso ao microfone nas definições do teu iPhone para este site."
+        );
+      }
+    };
+
+    try {
+      recognition.start();
+    } catch (e: any) {
+      console.error("Erro ao iniciar reconhecimento de voz:", e);
+      setIsListening(false);
+      alert(
+        "Não foi possível ativar o microfone.\n\n" +
+        "Garante que estás a usar HTTPS (ligação segura) e que permitiste o acesso ao microfone."
+      );
+    }
   };
 
   const handleAddItem = async (e: React.FormEvent) => {
