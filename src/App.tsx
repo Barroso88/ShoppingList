@@ -1000,8 +1000,17 @@ const Family = () => {
 };
 
 const Settings = ({ theme, setTheme }: { theme: string, setTheme: (t: string) => void }) => {
-  const { familyMembers, setCurrentScreen } = useAppContext();
+  const { familyMembers, setFamilyMembers, setCurrentScreen } = useAppContext();
   const user = familyMembers[0];
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [tempName, setTempName] = useState(user?.name || '');
+  const [securityModalOpen, setSecurityModalOpen] = useState(false);
+
+  const handleSaveName = () => {
+    if (!tempName.trim()) return;
+    setFamilyMembers(prev => prev.map((m, i) => i === 0 ? { ...m, name: tempName.trim() } : m));
+    setIsEditingName(false);
+  };
 
   return (
     <div className="pb-32 pt-16 px-6 bg-surface min-h-screen text-on-surface">
@@ -1018,8 +1027,8 @@ const Settings = ({ theme, setTheme }: { theme: string, setTheme: (t: string) =>
           <div className="w-32 h-32 rounded-full border-4 border-primary p-1 scale-110">
              <img src={user?.avatar} className="w-full h-full rounded-full object-cover" />
           </div>
-          <button className="absolute bottom-0 right-0 w-10 h-10 bg-primary rounded-full border-4 border-surface flex items-center justify-center text-white">
-            <Plus size={20} className="rotate-45" />
+          <button onClick={() => setIsEditingName(true)} className="absolute bottom-0 right-0 w-10 h-10 bg-primary rounded-full border-4 border-surface flex items-center justify-center text-white active:scale-90 transition-all">
+            <Pencil size={16} />
           </button>
         </div>
         <h1 className="text-3xl font-bold tracking-tight mb-1 text-on-surface">{user?.name}</h1>
@@ -1060,7 +1069,7 @@ const Settings = ({ theme, setTheme }: { theme: string, setTheme: (t: string) =>
         <section>
           <h3 className="text-xs font-bold text-outline uppercase tracking-[0.2em] mb-4">Conta</h3>
           <div className="bg-surface-container-low rounded-[32px] border border-outline-variant/20 divide-y divide-outline-variant/20">
-             <div className="p-6 flex items-center justify-between group active:bg-surface-container transition-all cursor-pointer">
+             <div onClick={() => setIsEditingName(true)} className="p-6 flex items-center justify-between group active:bg-surface-container transition-all cursor-pointer">
                 <div className="flex items-center gap-4">
                    <div className="w-12 h-12 rounded-2xl bg-surface-container flex items-center justify-center text-primary">
                       <Users size={20} />
@@ -1072,14 +1081,14 @@ const Settings = ({ theme, setTheme }: { theme: string, setTheme: (t: string) =>
                 </div>
                 <ChevronRight size={20} className="text-outline-variant" />
              </div>
-             <div className="p-6 flex items-center justify-between group active:bg-surface-container transition-all cursor-pointer">
+             <div onClick={() => setSecurityModalOpen(true)} className="p-6 flex items-center justify-between group active:bg-surface-container transition-all cursor-pointer">
                 <div className="flex items-center gap-4">
                    <div className="w-12 h-12 rounded-2xl bg-surface-container flex items-center justify-center text-primary">
                       <Shield size={20} />
                    </div>
                    <div>
                       <h4 className="font-bold text-on-surface">Palavra-passe e Segurança</h4>
-                      <p className="text-xs text-outline">2FA, Registos de segurança</p>
+                      <p className="text-xs text-outline">Segurança da sua conta Google</p>
                    </div>
                 </div>
                 <ChevronRight size={20} className="text-outline-variant" />
@@ -1113,6 +1122,93 @@ const Settings = ({ theme, setTheme }: { theme: string, setTheme: (t: string) =>
           Shopping List v2.4.1 (Versão Estável)
         </p>
       </div>
+
+      {/* Modal Editar Nome */}
+      <AnimatePresence>
+        {isEditingName && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm">
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-surface-container-low border border-outline-variant/30 rounded-[32px] p-6 w-full max-w-md soft-shadow"
+            >
+              <h3 className="text-xl font-bold text-on-surface mb-2">Informação Pessoal</h3>
+              <p className="text-sm text-outline mb-6">Altere o seu nome de exibição na Shopping List.</p>
+              
+              <div className="space-y-4 mb-8">
+                <div>
+                  <label className="text-xs font-bold text-outline uppercase tracking-wider block mb-2">Nome do Perfil</label>
+                  <input 
+                    type="text" 
+                    value={tempName}
+                    onChange={(e) => setTempName(e.target.value)}
+                    className="w-full bg-surface border border-outline-variant/30 rounded-2xl px-4 py-3 text-sm text-on-surface outline-none focus:border-primary font-medium"
+                    placeholder="O teu nome..."
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-outline uppercase tracking-wider block mb-2">Email (Apenas leitura)</label>
+                  <input 
+                    type="text" 
+                    value={user?.email} 
+                    disabled
+                    className="w-full bg-surface-container border border-outline-variant/10 rounded-2xl px-4 py-3 text-sm text-outline outline-none cursor-not-allowed font-medium"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <button 
+                  onClick={() => setIsEditingName(false)}
+                  className="flex-1 h-12 bg-surface-container border border-outline-variant/20 text-on-surface rounded-full font-bold text-sm active:scale-95 transition-all"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  onClick={handleSaveName}
+                  className="flex-1 h-12 bg-primary text-white rounded-full font-bold active:scale-95 transition-all text-sm shadow-lg shadow-primary/20"
+                >
+                  Guardar
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Modal Palavra-passe e Segurança */}
+      <AnimatePresence>
+        {securityModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm">
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-surface-container-low border border-outline-variant/30 rounded-[32px] p-6 w-full max-w-md soft-shadow"
+            >
+              <div className="w-16 h-16 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mb-4">
+                <Shield size={32} />
+              </div>
+              <h3 className="text-xl font-bold text-on-surface mb-2">Segurança da Conta</h3>
+              <p className="text-sm text-outline mb-6">Esta aplicação utiliza autenticação segura via **Google Sign-In**.</p>
+              
+              <div className="bg-surface p-4 rounded-2xl border border-outline-variant/10 text-xs text-outline space-y-2 mb-8 leading-relaxed">
+                <p>• A sua palavra-passe nunca é partilhada nem armazenada nos nossos servidores.</p>
+                <p>• A segurança do acesso, 2FA (Verificação de dois passos) e alertas de login são totalmente assegurados pela infraestrutura de segurança da Google.</p>
+                <p>• Para alterar a segurança ou a palavra-passe, deve aceder à sua conta Google.</p>
+              </div>
+
+              <button 
+                onClick={() => setSecurityModalOpen(false)}
+                className="w-full h-12 bg-primary text-white rounded-full font-bold active:scale-95 transition-all text-sm shadow-lg shadow-primary/20"
+              >
+                Compreendido
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
