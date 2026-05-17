@@ -97,12 +97,14 @@ const NavBar = ({ activeScreen, onScreenChange }: { activeScreen: AppScreen, onS
           <button 
             key={tab.id}
             onClick={() => onScreenChange(tab.id)}
-            className={`flex flex-col items-center gap-1 transition-all ${isActive ? `${tab.activeColor} scale-110` : 'text-outline hover:text-on-surface-variant'}`}
+            className={`flex flex-col items-center gap-1 transition-all ${tab.activeColor} ${isActive ? 'scale-110 opacity-100' : 'opacity-40 hover:opacity-80'}`}
           >
-            <div className={`p-2 rounded-2xl transition-all ${isActive ? tab.activeBg : ''}`}>
+            <div className={`p-2 rounded-2xl transition-all ${isActive ? tab.activeBg : 'bg-transparent'}`}>
               <Icon size={24} strokeWidth={isActive ? 2.5 : 2} />
             </div>
-            <span className="text-[10px] font-semibold uppercase tracking-wider">{tab.label}</span>
+            <span className={`text-[10px] uppercase tracking-wider transition-all ${isActive ? 'font-bold' : 'font-semibold'}`}>
+              {tab.label}
+            </span>
           </button>
         );
       })}
