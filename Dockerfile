@@ -1,21 +1,40 @@
-# Passo 1: Construir a aplicação React
-FROM node:20-alpine AS builder
+FROM node:20-alpine AS base
 
+# Install dependencies only when needed
+FROM base AS deps
 WORKDIR /app
-COPY package*.json ./
-RUN npm install
+COPY package.json package-lock.json ./
+RUN npm ci
+
+# Rebuild the source code only when needed
+FROM base AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+# We need to generate Prisma client if schema exists
+RUN npx prisma generate || true
 RUN npm run build
 
-# Passo 2: Servir a aplicação compilada com NGINX
-FROM nginx:alpine
+# Production image, copy all the files and run next
+FROM base AS runner
+WORKDIR /app
 
-# Copiar os ficheiros compilados do Passo 1 para o servidor NGINX
-COPY --from=builder /app/dist /usr/share/nginx/html
+ENV NODE_ENV production
 
-# Copiar configuração customizada do NGINX (opcional, para lidar com React Router)
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Don't run production as root
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
 
-EXPOSE 80
+COPY --from=builder /app/public ./public
+# Automatically leverage output traces to reduce image size
+# https://nextjs.org/docs/advanced-features/output-file-tracing
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-CMD ["nginx", "-g", "daemon off;"]
+USER nextjs
+
+EXPOSE 3000
+ENV PORT 3000
+ENV HOSTNAME "0.0.0.0"
+
+CMD ["node", "server.js"]
