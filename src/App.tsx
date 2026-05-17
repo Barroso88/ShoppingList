@@ -600,26 +600,52 @@ const Dashboard = () => {
           <button onClick={() => setCurrentScreen('lists')} className="text-sm font-bold text-primary active:opacity-70 transition-opacity">Ver Tudo</button>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {lists.length > 0 ? lists.map((list) => (
-             <div 
-              key={list.id} 
-              onClick={() => { setActiveListId(list.id); setCurrentScreen('list-detail'); }}
-              className="bg-surface-container-low p-6 rounded-[32px] soft-shadow border border-outline-variant/10 flex flex-col gap-4 group active:scale-[0.98] transition-all cursor-pointer"
-            >
-              <div className="flex justify-between items-start">
-                <div className={`p-4 rounded-2xl`} style={{ backgroundColor: `${list.color}40`, color: list.color }}>
-                   {list.icon === 'ShoppingCart' ? <ShoppingCart /> : list.icon === 'Flame' ? <Flame /> : <Dna />}
+          {lists.length > 0 ? lists.map((list) => {
+            const cardColor = list.color || '#ff6b6b';
+            return (
+              <div 
+                key={list.id} 
+                onClick={() => { setActiveListId(list.id); setCurrentScreen('list-detail'); }}
+                className="p-6 rounded-[32px] soft-shadow flex flex-col gap-4 group active:scale-[0.98] transition-all cursor-pointer border"
+                style={{ 
+                  background: `linear-gradient(135deg, ${cardColor}18, ${cardColor}04)`,
+                  borderColor: `${cardColor}35`,
+                  boxShadow: `0 12px 30px -10px ${cardColor}18, 0 4px 12px -5px rgba(0, 0, 0, 0.4)`
+                }}
+              >
+                <div className="flex justify-between items-start">
+                  <div 
+                    className="p-4 rounded-2xl flex items-center justify-center" 
+                    style={{ 
+                      backgroundColor: `${cardColor}25`, 
+                      color: cardColor 
+                    }}
+                  >
+                     {list.icon === 'ShoppingCart' ? <ShoppingCart /> : list.icon === 'Flame' ? <Flame /> : <Dna />}
+                  </div>
+                  <span 
+                    className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border"
+                    style={{ 
+                      backgroundColor: `${cardColor}10`,
+                      color: cardColor,
+                      borderColor: `${cardColor}30`
+                    }}
+                  >
+                    {list.itemCount} itens
+                  </span>
                 </div>
-                <span className="bg-surface-container-low px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-primary">
-                  {list.itemCount} itens
-                </span>
+                <div>
+                  <h4 
+                    className="text-xl font-bold transition-colors"
+                    style={{ color: cardColor }}
+                  >
+                    {list.name}
+                  </h4>
+                  <p className="text-sm text-outline/80">Última edição: {list.lastEdited}</p>
+                </div>
               </div>
-              <div>
-                <h4 className="text-xl font-bold text-on-surface group-hover:text-primary transition-colors">{list.name}</h4>
-                <p className="text-sm text-outline">Última edição: {list.lastEdited}</p>
-              </div>
-            </div>
-          )) : (
+            );
+          }) : (
             <div className="bg-surface-container-low p-8 rounded-[32px] soft-shadow border border-outline-variant/10 text-center flex flex-col items-center gap-2">
               <ShoppingCart size={32} className="text-outline/50" />
               <p className="text-outline font-medium">Ainda não tens listas ativas.</p>
@@ -728,17 +754,18 @@ const ListsOverview = () => {
               <div 
                 key={list.id} 
                 onClick={() => openList(list.id)}
-                className="bg-surface-container-low p-6 rounded-[32px] soft-shadow flex flex-col gap-4 group active:scale-[0.98] transition-all cursor-pointer border"
+                className="p-6 rounded-[32px] soft-shadow flex flex-col gap-4 group active:scale-[0.98] transition-all cursor-pointer border"
                 style={{ 
-                  borderColor: `${cardColor}25`,
-                  boxShadow: `0 12px 30px -10px ${cardColor}15, 0 4px 12px -5px rgba(0, 0, 0, 0.4)`
+                  background: `linear-gradient(135deg, ${cardColor}18, ${cardColor}04)`,
+                  borderColor: `${cardColor}35`,
+                  boxShadow: `0 12px 30px -10px ${cardColor}18, 0 4px 12px -5px rgba(0, 0, 0, 0.4)`
                 }}
               >
                 <div className="flex justify-between items-start">
                   <div 
                     className="p-4 rounded-2xl flex items-center justify-center"
                     style={{ 
-                      backgroundColor: `${cardColor}15`,
+                      backgroundColor: `${cardColor}25`,
                       color: cardColor
                     }}
                   >
@@ -749,7 +776,7 @@ const ListsOverview = () => {
                     style={{ 
                       backgroundColor: `${cardColor}10`,
                       color: cardColor,
-                      borderColor: `${cardColor}25`
+                      borderColor: `${cardColor}30`
                     }}
                   >
                     {list.itemCount} itens
@@ -757,16 +784,12 @@ const ListsOverview = () => {
                 </div>
                 <div>
                   <h4 
-                    className="text-xl font-bold text-on-surface transition-colors"
-                    style={{ 
-                      '--hover-color': cardColor 
-                    } as any}
-                    onMouseEnter={(e) => e.currentTarget.style.color = cardColor}
-                    onMouseLeave={(e) => e.currentTarget.style.color = ''}
+                    className="text-xl font-bold transition-colors"
+                    style={{ color: cardColor }}
                   >
                     {list.name}
                   </h4>
-                  <p className="text-sm text-outline">Última edição: {list.lastEdited}</p>
+                  <p className="text-sm text-outline/80">Última edição: {list.lastEdited}</p>
                 </div>
               </div>
             );
@@ -2526,25 +2549,25 @@ const RecipesOverview = () => {
               <div 
                 key={recipe.id} 
                 onClick={() => openRecipe(recipe.id)}
-                className="bg-surface-container-low p-4 rounded-3xl soft-shadow flex items-center gap-4 group active:scale-[0.98] transition-all cursor-pointer justify-between border"
+                className="p-4 rounded-3xl soft-shadow flex items-center gap-4 group active:scale-[0.98] transition-all cursor-pointer justify-between border"
                 style={{ 
-                  borderColor: `${recipeColor}25`,
-                  boxShadow: `0 12px 30px -10px ${recipeColor}15, 0 4px 12px -5px rgba(0, 0, 0, 0.4)`
+                  background: `linear-gradient(135deg, ${recipeColor}18, ${recipeColor}04)`,
+                  borderColor: `${recipeColor}35`,
+                  boxShadow: `0 12px 30px -10px ${recipeColor}18, 0 4px 12px -5px rgba(0, 0, 0, 0.4)`
                 }}
               >
                 <div className="flex items-center gap-4 min-w-0 flex-grow">
                   <div 
                     className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl flex-shrink-0"
                     style={{ 
-                      backgroundColor: `${recipeColor}15`
+                      backgroundColor: `${recipeColor}25`
                     }}
                   >
                      {recipe.emoji}
                   </div>
                   <h4 
-                    className="text-lg font-bold text-on-surface transition-colors truncate"
-                    onMouseEnter={(e) => e.currentTarget.style.color = recipeColor}
-                    onMouseLeave={(e) => e.currentTarget.style.color = ''}
+                    className="text-lg font-bold transition-colors truncate"
+                    style={{ color: recipeColor }}
                   >
                     {recipe.title}
                   </h4>
