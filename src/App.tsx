@@ -438,16 +438,24 @@ const Dashboard = () => {
     }
   };
 
+  const currentUser = familyMembers.find(m => m.email.trim().toLowerCase() === session?.user?.email?.trim().toLowerCase()) || familyMembers[0] || ({
+    id: 'temp',
+    name: session?.user?.name || 'Membro',
+    avatar: session?.user?.image || 'https://api.dicebear.com/7.x/avataaars/svg',
+    email: session?.user?.email || '',
+    role: 'Membro'
+  } as FamilyMember);
+
   return (
     <div className="pb-32 px-6 pt-16">
       <header className="flex justify-between items-center mb-8">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white soft-shadow">
-            <img src={familyMembers[0]?.avatar} alt="Profile" className="w-full h-full object-cover" />
+            <img src={currentUser?.avatar} alt="Profile" className="w-full h-full object-cover" />
           </div>
           <div>
             <p className="text-sm text-outline">Bom dia,</p>
-            <h2 className="text-xl font-bold text-on-surface">{familyMembers[0]?.name.split(' ')[0]}</h2>
+            <h2 className="text-xl font-bold text-on-surface">{currentUser?.name.split(' ')[0]}</h2>
           </div>
         </div>
       </header>
@@ -1309,8 +1317,19 @@ const ListDetail = ({ isSupermarketMode, setIsSupermarketMode }: { isSupermarket
 
 const Family = () => {
   const { familyMembers, activities } = useAppContext();
+  const { data: session } = useSession();
   const [isInviting, setIsInviting] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
+  
+  const currentUser = familyMembers.find(m => m.email.trim().toLowerCase() === session?.user?.email?.trim().toLowerCase()) || familyMembers[0] || ({
+    id: 'temp',
+    name: session?.user?.name || 'Membro',
+    avatar: session?.user?.image || 'https://api.dicebear.com/7.x/avataaars/svg',
+    email: session?.user?.email || '',
+    role: 'Membro'
+  } as FamilyMember);
+
+  const otherMembers = familyMembers.filter(m => m.id !== currentUser?.id);
   
   const [shareSettings, setShareSettings] = useState([
     { id: 'realtime', label: 'Presença em tempo real', sub: 'Mostrar quando outros estão a editar listas', active: true },
@@ -1348,7 +1367,7 @@ const Family = () => {
       <header className="flex justify-between items-center mb-10">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full overflow-hidden border border-outline-variant/30">
-            <img src={familyMembers[0]?.avatar} className="w-full h-full object-cover" />
+            <img src={currentUser?.avatar} className="w-full h-full object-cover" />
           </div>
           <h2 className="text-xl font-bold text-on-surface">Família</h2>
         </div>
@@ -1361,7 +1380,7 @@ const Family = () => {
       </section>
 
       <div className="space-y-4 mb-8">
-        {familyMembers.length > 1 ? familyMembers.slice(1).map((member) => (
+        {otherMembers.length > 0 ? otherMembers.map((member) => (
           <div key={member.id} className="bg-surface-container-low p-5 rounded-[32px] soft-shadow border border-outline-variant/10 flex items-center justify-between group active:scale-[0.98] transition-all">
             <div className="flex items-center gap-4">
               <img src={member.avatar} className="w-14 h-14 rounded-full border-2 border-surface" />
@@ -1447,10 +1466,25 @@ const Family = () => {
 
 const Settings = ({ theme, setTheme }: { theme: string, setTheme: (t: string) => void }) => {
   const { familyMembers, setFamilyMembers, setCurrentScreen } = useAppContext();
-  const user = familyMembers[0];
+  const { data: session } = useSession();
+  
+  const user = familyMembers.find(m => m.email.trim().toLowerCase() === session?.user?.email?.trim().toLowerCase()) || familyMembers[0] || ({
+    id: 'temp',
+    name: session?.user?.name || 'Membro',
+    avatar: session?.user?.image || 'https://api.dicebear.com/7.x/avataaars/svg',
+    email: session?.user?.email || '',
+    role: 'Membro'
+  } as FamilyMember);
+
   const [isEditingName, setIsEditingName] = useState(false);
-  const [tempName, setTempName] = useState(user?.name || '');
+  const [tempName, setTempName] = useState('');
   const [securityModalOpen, setSecurityModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (user?.name) {
+      setTempName(user.name);
+    }
+  }, [user?.name]);
 
   const [familyCode, setFamilyCode] = useState('default-family');
   const [isEditingFamily, setIsEditingFamily] = useState(false);
@@ -1466,7 +1500,7 @@ const Settings = ({ theme, setTheme }: { theme: string, setTheme: (t: string) =>
 
   const handleSaveName = () => {
     if (!tempName.trim()) return;
-    setFamilyMembers(prev => prev.map((m, i) => i === 0 ? { ...m, name: tempName.trim() } : m));
+    setFamilyMembers(prev => prev.map((m) => m.id === user?.id ? { ...m, name: tempName.trim() } : m));
     setIsEditingName(false);
   };
 
