@@ -1029,31 +1029,31 @@ const ListDetail = ({ isSupermarketMode, setIsSupermarketMode }: { isSupermarket
           </div>
         </div>
       ) : (
-        <header className="flex justify-between items-center mb-8">
-          <div className="flex items-center gap-4">
-            <button onClick={() => setCurrentScreen('lists')} className="w-10 h-10 bg-surface-container-low rounded-full flex items-center justify-center text-on-surface shadow-sm">
+        <header className="flex justify-between items-center mb-8 gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <button onClick={() => setCurrentScreen('lists')} className="w-10 h-10 bg-surface-container-low rounded-full flex items-center justify-center text-on-surface shadow-sm flex-shrink-0">
               <ChevronLeft size={24} />
             </button>
-            <div className="flex flex-col">
-              <div className="flex items-center gap-2.5">
-                <h2 className="text-2xl font-bold text-on-surface">{activeList.name}</h2>
+            <div className="flex flex-col min-w-0">
+              <h2 className="text-xl sm:text-2xl font-bold text-on-surface truncate">{activeList.name}</h2>
+              <div className="flex items-center gap-1.5 mt-0.5">
                 <button 
                   onClick={() => setIsSupermarketMode(true)}
-                  className="flex items-center gap-1 px-2.5 py-1 bg-[#10b981]/10 hover:bg-[#10b981]/20 text-[#10b981] border border-[#10b981]/20 rounded-full text-[10px] font-extrabold uppercase tracking-wider transition-all active:scale-95"
+                  className="flex items-center gap-1 px-2.5 py-0.5 bg-[#10b981]/10 hover:bg-[#10b981]/20 text-[#10b981] border border-[#10b981]/20 rounded-full text-[9px] font-extrabold uppercase tracking-wider transition-all active:scale-95 flex-shrink-0"
                 >
-                  <Zap size={10} className="fill-current" />
+                  <Zap size={9} className="fill-current" />
                   <span>Supermercado</span>
                 </button>
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="flex -space-x-3">
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="hidden sm:flex -space-x-2">
               {familyMembers.slice(0, 3).map((f) => (
-                <img key={f.id} src={f.avatar} className="w-10 h-10 rounded-full border-4 border-surface object-cover" />
+                <img key={f.id} src={f.avatar} className="w-8 h-8 rounded-full border-2 border-surface object-cover" />
               ))}
             </div>
-            <button onClick={deleteList} className="w-10 h-10 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center hover:bg-red-500/20 active:scale-90 transition-all shadow-sm">
+            <button onClick={deleteList} className="w-10 h-10 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center hover:bg-red-500/20 active:scale-90 transition-all shadow-sm flex-shrink-0" title="Apagar Lista">
               <Trash2 size={18} />
             </button>
           </div>
