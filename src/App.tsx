@@ -375,6 +375,48 @@ const AiRecipeGenerator = () => {
 
 const Dashboard = () => {
   const { lists, setActiveListId, setCurrentScreen, familyMembers } = useAppContext();
+  const [quickAddText, setQuickAddText] = useState('');
+  const [isListening, setIsListening] = useState(false);
+
+  const startListening = () => {
+    const SpeechRecognition = window.SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("O teu browser não suporta reconhecimento de voz.");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'pt-PT';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.onstart = () => setIsListening(true);
+    
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setQuickAddText(prev => prev ? `${prev} ${transcript}` : transcript);
+    };
+
+    recognition.onend = () => setIsListening(false);
+    recognition.onerror = () => setIsListening(false);
+
+    recognition.start();
+  };
+
+  const handleQuickAdd = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && quickAddText.trim()) {
+      if (lists.length === 0) {
+        alert("Cria primeiro uma Lista de Compras para adicionares produtos!");
+        return;
+      }
+      const targetList = lists[0];
+      setActiveListId(targetList.id);
+      setCurrentScreen('list-detail');
+      alert(`Em breve: Adição automática de "${quickAddText}" à lista "${targetList.name}"!`);
+      setQuickAddText('');
+    }
+  };
+
   return (
     <div className="pb-32 px-6 pt-16">
       <header className="flex justify-between items-center mb-8">
@@ -398,12 +440,16 @@ const Dashboard = () => {
           <Plus className="text-primary mr-4" size={24} />
           <input 
             type="text" 
+            value={quickAddText}
+            onChange={(e) => setQuickAddText(e.target.value)}
+            onKeyDown={handleQuickAdd}
             placeholder="Adição rápida a qualquer lista..." 
             className="flex-grow bg-transparent outline-none text-on-surface placeholder:text-outline-variant font-medium"
           />
           <div className="flex gap-3 text-outline">
-            <Mic size={20} />
-            <Camera size={20} />
+            <button onClick={startListening} className={`transition-colors ${isListening ? 'text-red-500 animate-pulse' : 'hover:text-primary'}`}>
+              <Mic size={20} />
+            </button>
           </div>
         </div>
       </div>
