@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, createContext, useContext } from 'react';
-import { signIn, useSession } from 'next-auth/react';
+import { signIn, signOut, useSession } from 'next-auth/react';
 import { GoogleGenAI } from '@google/genai';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -1005,7 +1005,7 @@ const Settings = ({ theme, setTheme }: { theme: string, setTheme: (t: string) =>
           </div>
         </section>
 
-        <button className="w-full h-16 bg-surface-container-low border border-outline-variant/20 rounded-3xl flex items-center justify-center gap-3 text-red-500 font-bold active:scale-[0.98] transition-all">
+        <button onClick={() => signOut()} className="w-full h-16 bg-surface-container-low border border-outline-variant/20 rounded-3xl flex items-center justify-center gap-3 text-red-500 font-bold active:scale-[0.98] transition-all">
           <LogOut size={20} /> Sair
         </button>
 
