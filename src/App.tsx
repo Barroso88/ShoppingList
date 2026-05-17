@@ -2778,16 +2778,17 @@ const RecipesOverview = () => {
               <div 
                 key={recipe.id} 
                 onClick={() => openRecipe(recipe.id)}
-                className="p-4 rounded-3xl soft-shadow flex items-center gap-4 group active:scale-[0.98] transition-all cursor-pointer justify-between border"
+                className="p-4 rounded-3xl soft-shadow flex flex-col active:scale-[0.98] transition-all cursor-pointer border"
                 style={{ 
                   background: `linear-gradient(135deg, ${recipeColor}18, ${recipeColor}04)`,
                   borderColor: `${recipeColor}35`,
                   boxShadow: `0 12px 30px -10px ${recipeColor}18, 0 4px 12px -5px rgba(0, 0, 0, 0.4)`
                 }}
               >
-                <div className="flex items-center gap-4 min-w-0 flex-grow">
+                {/* Top Row: Emoji and Full Title */}
+                <div className="flex items-center gap-3.5 min-w-0">
                   <div 
-                    className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl flex-shrink-0"
+                    className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0"
                     style={{ 
                       backgroundColor: `${recipeColor}25`
                     }}
@@ -2795,24 +2796,27 @@ const RecipesOverview = () => {
                      {recipe.emoji}
                   </div>
                   <h4 
-                    className="text-lg font-bold transition-colors truncate"
+                    className="text-sm sm:text-base font-bold transition-colors leading-snug break-words pr-1"
                     style={{ color: recipeColor }}
                   >
                     {recipe.title}
                   </h4>
                 </div>
 
-                <button 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setDeleteRecipeId(recipe.id);
-                    setDeleteModalOpen(true);
-                  }}
-                  className="w-9 h-9 bg-red-500/10 text-red-500 rounded-xl flex items-center justify-center hover:bg-red-500/20 transition-colors active:scale-90 flex-shrink-0"
-                  title="Apagar Receita"
-                >
-                  <Trash2 size={16} />
-                </button>
+                {/* Bottom Row: Actions (Delete) */}
+                <div className="flex justify-end mt-3 pt-2.5 border-t border-white/5">
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDeleteRecipeId(recipe.id);
+                      setDeleteModalOpen(true);
+                    }}
+                    className="w-8 h-8 bg-red-500/10 text-red-500 rounded-xl flex items-center justify-center hover:bg-red-500/20 transition-colors active:scale-90 flex-shrink-0"
+                    title="Apagar Receita"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
               </div>
             );
           })}
