@@ -1113,27 +1113,27 @@ export default function App() {
   const [currentScreen, setCurrentScreen] = useState<AppScreen>('onboarding');
   
   useEffect(() => {
-    if (status === 'authenticated') {
+    if (status === 'authenticated' && session?.user) {
       setCurrentScreen('home');
+      setFamilyMembers([{
+        id: session.user.id || '1',
+        name: session.user.name || 'Utilizador',
+        role: 'Admin',
+        avatar: session.user.image || '',
+        email: session.user.email || ''
+      }]);
     } else if (status === 'unauthenticated') {
       setCurrentScreen('onboarding');
+      setFamilyMembers([]);
     }
-  }, [status]);
+  }, [status, session]);
   const [theme, setTheme] = useState<string>('dark-midnight');
   const [items, setItems] = useState<ShoppingItem[]>(MOCK_ITEMS.map(i => ({...i, listId: 'l1'})));
   const [lists, setLists] = useState<ShoppingList[]>(MOCK_LISTS);
   const [recipes, setRecipes] = useState<SavedRecipe[]>([]);
   const [activeRecipeId, setActiveRecipeId] = useState<string | null>(null);
   const [activeListId, setActiveListId] = useState<string | null>(null);
-  const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([
-    {
-      id: 'f1',
-      name: 'Alex Richardson',
-      role: 'Admin',
-      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=300',
-      email: 'alex.richardson@shoppinglist.app'
-    }
-  ]);
+  const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
