@@ -1402,17 +1402,18 @@ const ListDetail = ({ isSupermarketMode, setIsSupermarketMode }: { isSupermarket
                 {listItems.filter(item => item.category === cat).map((item) => (
                   <div 
                     key={item.id}
-                    className={`bg-surface-container-low p-5 rounded-3xl soft-shadow border border-outline-variant/10 flex items-start gap-4 transition-all ${item.checked ? 'opacity-50' : ''}`}
+                    className={`bg-surface-container-low p-5 rounded-3xl soft-shadow border border-outline-variant/10 flex flex-col transition-all ${item.checked ? 'opacity-50' : ''}`}
                   >
-                    <button 
-                      onClick={() => toggleItem(item.id)}
-                      className={`w-8 h-8 rounded-full border-2 mt-1 transition-all flex items-center justify-center flex-shrink-0 ${item.checked ? 'bg-primary border-primary text-white' : 'border-outline-variant/40'}`}
-                    >
-                      {item.checked && <Check size={16} strokeWidth={3} />}
-                    </button>
-                    <div className="flex-grow">
-                      <div className="flex justify-between items-start">
-                        <div className="flex-grow mr-2">
+                    {/* Top Row: Checkbox, Name, and Urgent Badge */}
+                    <div className="flex justify-between items-start gap-3 min-w-0">
+                      <div className="flex items-center gap-3 min-w-0 flex-grow">
+                        <button 
+                          onClick={() => toggleItem(item.id)}
+                          className={`w-8 h-8 rounded-full border-2 transition-all flex items-center justify-center flex-shrink-0 ${item.checked ? 'bg-primary border-primary text-white' : 'border-outline-variant/40 hover:border-primary/50'}`}
+                        >
+                          {item.checked && <Check size={16} strokeWidth={3} />}
+                        </button>
+                        <div className="min-w-0 flex-grow">
                           {editingItemId === item.id ? (
                              <input 
                                type="text"
@@ -1421,41 +1422,66 @@ const ListDetail = ({ isSupermarketMode, setIsSupermarketMode }: { isSupermarket
                                onChange={e => setEditNameValue(e.target.value)}
                                onBlur={() => saveEdit(item.id)}
                                onKeyDown={e => e.key === 'Enter' && saveEdit(item.id)}
-                               className="text-lg font-bold leading-none mb-1 bg-surface border-b-2 border-primary outline-none px-1 py-0.5 w-full text-on-surface"
+                               className="text-lg font-bold leading-none bg-surface border-b-2 border-primary outline-none px-1 py-0.5 w-full text-on-surface"
                              />
                           ) : (
-                             <h4 className={`text-lg font-bold leading-none mb-1 ${item.checked ? 'line-through' : ''}`}>{item.name}</h4>
+                             <h4 className={`text-lg font-bold leading-tight ${item.checked ? 'line-through text-outline' : 'text-on-surface'}`}>{item.name}</h4>
                           )}
-                          {item.isUrgent && <span className="text-[10px] font-bold text-red-600 uppercase tracking-widest">URGENTE</span>}
-                          {item.notes && <p className="text-xs text-outline font-medium italic mt-1">{item.notes}</p>}
+                          {item.notes && <p className="text-xs text-outline font-medium italic mt-1 truncate">{item.notes}</p>}
                         </div>
-                        <div className="flex flex-col items-end gap-2 flex-shrink-0">
-                          <div className="flex items-center gap-1 bg-surface-container rounded-full p-1 border border-outline-variant/20">
-                            <button onClick={() => adjustQuantity(item.id, -1)} className="w-6 h-6 rounded-full flex items-center justify-center text-outline hover:text-primary active:bg-outline-variant/20">
-                              <Minus size={12} strokeWidth={3} />
-                            </button>
-                            <span className="text-[10px] font-bold text-on-surface px-1 min-w-[20px] text-center">
-                              {item.quantity}
-                            </span>
-                            <button onClick={() => adjustQuantity(item.id, 1)} className="w-6 h-6 rounded-full flex items-center justify-center text-outline hover:text-primary active:bg-outline-variant/20">
-                              <Plus size={12} strokeWidth={3} />
-                            </button>
-                          </div>
-                          <div className="flex items-center gap-1">
-                             {editingItemId === item.id ? (
-                               <button onClick={() => saveEdit(item.id)} className="p-2 text-white bg-primary active:scale-90 transition-all rounded-full">
-                                  <Check size={16} />
-                               </button>
-                             ) : (
-                               <button onClick={() => startEdit(item.id, item.name)} className="p-2 text-green-500 bg-green-500/10 active:scale-90 transition-all rounded-full">
-                                  <Pencil size={16} />
-                               </button>
-                             )}
-                             <button onClick={() => deleteItem(item.id)} className="p-2 text-red-500 bg-red-500/10 active:scale-90 transition-all rounded-full">
-                                <Trash2 size={16} />
-                             </button>
-                          </div>
-                        </div>
+                      </div>
+
+                      {item.isUrgent && (
+                        <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-red-500/10 text-red-500 border border-red-500/25 uppercase tracking-wider flex-shrink-0">
+                          URGENTE
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Bottom Row: Quantity controls and Action buttons */}
+                    <div className="flex items-center justify-between mt-4 pt-3 border-t border-white/5">
+                      {/* Quantity Control Pill */}
+                      <div className="bg-black/30 border border-white/5 rounded-2xl flex items-center p-1 gap-1">
+                        <button 
+                          onClick={() => adjustQuantity(item.id, -1)} 
+                          className="w-7 h-7 rounded-xl flex items-center justify-center hover:bg-white/10 text-outline transition-colors"
+                        >
+                          <Minus size={12} strokeWidth={3} />
+                        </button>
+                        <span className="px-2 text-xs font-extrabold text-on-surface min-w-[32px] text-center font-mono">
+                          {item.quantity}
+                        </span>
+                        <button 
+                          onClick={() => adjustQuantity(item.id, 1)} 
+                          className="w-7 h-7 rounded-xl flex items-center justify-center hover:bg-white/10 text-outline transition-colors"
+                        >
+                          <Plus size={12} strokeWidth={3} />
+                        </button>
+                      </div>
+
+                      {/* Actions (Edit and Delete) */}
+                      <div className="flex items-center gap-2">
+                        {editingItemId === item.id ? (
+                          <button 
+                            onClick={() => saveEdit(item.id)} 
+                            className="w-9 h-9 bg-primary text-white rounded-xl flex items-center justify-center hover:bg-primary/90 transition-all active:scale-90"
+                          >
+                            <Check size={16} />
+                          </button>
+                        ) : (
+                          <button 
+                            onClick={() => startEdit(item.id, item.name)} 
+                            className="w-9 h-9 bg-green-500/10 text-green-500 rounded-xl flex items-center justify-center hover:bg-green-500/20 transition-all active:scale-90"
+                          >
+                            <Pencil size={16} />
+                          </button>
+                        )}
+                        <button 
+                          onClick={() => deleteItem(item.id)} 
+                          className="w-9 h-9 bg-red-500/10 text-red-500 rounded-xl flex items-center justify-center hover:bg-red-500/20 transition-all active:scale-90"
+                        >
+                          <Trash2 size={16} />
+                        </button>
                       </div>
                     </div>
                   </div>
