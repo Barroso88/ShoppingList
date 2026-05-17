@@ -722,26 +722,55 @@ const ListsOverview = () => {
              <p className="text-outline text-sm">Clica no botão '+' para criares a primeira lista de compras da família.</p>
           </div>
         ) : (
-          lists.map(list => (
-             <div 
-               key={list.id} 
-               onClick={() => openList(list.id)}
-               className="bg-surface-container-low p-6 rounded-[32px] soft-shadow border border-outline-variant/10 flex flex-col gap-4 group active:scale-[0.98] transition-all cursor-pointer"
-             >
-               <div className="flex justify-between items-start">
-                 <div className="p-4 rounded-2xl bg-surface-container text-primary">
-                    {list.icon === 'ShoppingCart' ? <ShoppingCart /> : list.icon === 'Flame' ? <Flame /> : <Dna />}
-                 </div>
-                 <span className="bg-surface-container-low px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-primary">
-                   {list.itemCount} itens
-                 </span>
-               </div>
-               <div>
-                 <h4 className="text-xl font-bold text-on-surface group-hover:text-primary transition-colors">{list.name}</h4>
-                 <p className="text-sm text-outline">Última edição: {list.lastEdited}</p>
-               </div>
-             </div>
-          ))
+          lists.map(list => {
+            const cardColor = list.color || '#ff6b6b';
+            return (
+              <div 
+                key={list.id} 
+                onClick={() => openList(list.id)}
+                className="bg-surface-container-low p-6 rounded-[32px] soft-shadow flex flex-col gap-4 group active:scale-[0.98] transition-all cursor-pointer border"
+                style={{ 
+                  borderColor: `${cardColor}25`,
+                  boxShadow: `0 12px 30px -10px ${cardColor}15, 0 4px 12px -5px rgba(0, 0, 0, 0.4)`
+                }}
+              >
+                <div className="flex justify-between items-start">
+                  <div 
+                    className="p-4 rounded-2xl flex items-center justify-center"
+                    style={{ 
+                      backgroundColor: `${cardColor}15`,
+                      color: cardColor
+                    }}
+                  >
+                     {list.icon === 'ShoppingCart' ? <ShoppingCart /> : list.icon === 'Flame' ? <Flame /> : <Dna />}
+                  </div>
+                  <span 
+                    className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border"
+                    style={{ 
+                      backgroundColor: `${cardColor}10`,
+                      color: cardColor,
+                      borderColor: `${cardColor}25`
+                    }}
+                  >
+                    {list.itemCount} itens
+                  </span>
+                </div>
+                <div>
+                  <h4 
+                    className="text-xl font-bold text-on-surface transition-colors"
+                    style={{ 
+                      '--hover-color': cardColor 
+                    } as any}
+                    onMouseEnter={(e) => e.currentTarget.style.color = cardColor}
+                    onMouseLeave={(e) => e.currentTarget.style.color = ''}
+                  >
+                    {list.name}
+                  </h4>
+                  <p className="text-sm text-outline">Última edição: {list.lastEdited}</p>
+                </div>
+              </div>
+            );
+          })
         )}
       </div>
     </div>
@@ -2431,6 +2460,27 @@ const RecipesOverview = () => {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleteRecipeId, setDeleteRecipeId] = useState<string | null>(null);
 
+  const getRecipeColor = (title: string) => {
+    const recipeColors = [
+      '#ff6b6b', // Coral
+      '#339af0', // Blue
+      '#51cf66', // Green
+      '#fcc419', // Yellow/Gold
+      '#cc5de8', // Purple
+      '#ff922b', // Orange
+      '#20c997', // Teal
+      '#f06595', // Pink
+      '#ae3ec9', // Violet
+      '#00f3ff', // Cyan
+    ];
+    let hash = 0;
+    for (let i = 0; i < title.length; i++) {
+      hash = title.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const index = Math.abs(hash) % recipeColors.length;
+    return recipeColors[index];
+  };
+
   const openRecipe = (id: string) => {
     setActiveRecipeId(id);
     setCurrentScreen('recipe-detail');
@@ -2470,32 +2520,50 @@ const RecipesOverview = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {recipes.map(recipe => (
-             <div 
-               key={recipe.id} 
-               onClick={() => openRecipe(recipe.id)}
-               className="bg-surface-container-low p-4 rounded-3xl soft-shadow border border-outline-variant/10 flex items-center gap-4 group active:scale-[0.98] transition-all cursor-pointer justify-between"
-             >
-               <div className="flex items-center gap-4 min-w-0 flex-grow">
-                 <div className="w-14 h-14 rounded-2xl bg-surface-container flex items-center justify-center text-3xl flex-shrink-0">
-                    {recipe.emoji}
-                 </div>
-                 <h4 className="text-lg font-bold text-on-surface group-hover:text-primary transition-colors truncate">{recipe.title}</h4>
-               </div>
+          {recipes.map(recipe => {
+            const recipeColor = getRecipeColor(recipe.title);
+            return (
+              <div 
+                key={recipe.id} 
+                onClick={() => openRecipe(recipe.id)}
+                className="bg-surface-container-low p-4 rounded-3xl soft-shadow flex items-center gap-4 group active:scale-[0.98] transition-all cursor-pointer justify-between border"
+                style={{ 
+                  borderColor: `${recipeColor}25`,
+                  boxShadow: `0 12px 30px -10px ${recipeColor}15, 0 4px 12px -5px rgba(0, 0, 0, 0.4)`
+                }}
+              >
+                <div className="flex items-center gap-4 min-w-0 flex-grow">
+                  <div 
+                    className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl flex-shrink-0"
+                    style={{ 
+                      backgroundColor: `${recipeColor}15`
+                    }}
+                  >
+                     {recipe.emoji}
+                  </div>
+                  <h4 
+                    className="text-lg font-bold text-on-surface transition-colors truncate"
+                    onMouseEnter={(e) => e.currentTarget.style.color = recipeColor}
+                    onMouseLeave={(e) => e.currentTarget.style.color = ''}
+                  >
+                    {recipe.title}
+                  </h4>
+                </div>
 
-               <button 
-                 onClick={(e) => {
-                   e.stopPropagation();
-                   setDeleteRecipeId(recipe.id);
-                   setDeleteModalOpen(true);
-                 }}
-                 className="w-9 h-9 bg-red-500/10 text-red-500 rounded-xl flex items-center justify-center hover:bg-red-500/20 transition-colors active:scale-90 flex-shrink-0"
-                 title="Apagar Receita"
-               >
-                 <Trash2 size={16} />
-               </button>
-             </div>
-          ))}
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDeleteRecipeId(recipe.id);
+                    setDeleteModalOpen(true);
+                  }}
+                  className="w-9 h-9 bg-red-500/10 text-red-500 rounded-xl flex items-center justify-center hover:bg-red-500/20 transition-colors active:scale-90 flex-shrink-0"
+                  title="Apagar Receita"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            );
+          })}
         </div>
       )}
 
