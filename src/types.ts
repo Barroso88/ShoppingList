@@ -1,4 +1,4 @@
-export type AppScreen = 'onboarding' | 'home' | 'lists' | 'list-detail' | 'family' | 'settings' | 'recipes' | 'recipe-detail';
+export type AppScreen = 'onboarding' | 'home' | 'lists' | 'list-detail' | 'family' | 'settings' | 'recipes' | 'recipe-detail' | 'pantry';
 
 export interface SavedRecipe {
   id: string;
@@ -44,4 +44,11 @@ export interface Activity {
   action: string;
   target: string;
   createdAt: Date;
+}
+
+export interface PantryItem {
+  id: string;
+  name: string;
+  quantity: string;
+  category: string;
 }

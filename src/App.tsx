@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, createContext, useContext, useRef } from 'react';
 import { signIn, signOut, useSession } from 'next-auth/react';
-import { getLists, createList as dbCreateList, deleteList as dbDeleteList, addItem as dbAddItem, toggleItemChecked as dbToggleItemChecked, updateItemQuantity as dbUpdateItemQuantity, updateItemName as dbUpdateItemName, deleteItem as dbDeleteItem, getRecipes, saveRecipe as dbSaveRecipe, deleteRecipe as dbDeleteRecipe, getActivities, logActivity, generateRecipeWithAI, getFamilyMembers as dbGetFamilyMembers, getFamilyCode as dbGetFamilyCode, updateFamilyCode as dbUpdateFamilyCode } from '@/app/actions';
+import { getLists, createList as dbCreateList, deleteList as dbDeleteList, addItem as dbAddItem, toggleItemChecked as dbToggleItemChecked, updateItemQuantity as dbUpdateItemQuantity, updateItemName as dbUpdateItemName, deleteItem as dbDeleteItem, getRecipes, saveRecipe as dbSaveRecipe, deleteRecipe as dbDeleteRecipe, getActivities, logActivity, generateRecipeWithAI, getFamilyMembers as dbGetFamilyMembers, getFamilyCode as dbGetFamilyCode, updateFamilyCode as dbUpdateFamilyCode, getPantryItems as dbGetPantryItems, addPantryItem as dbAddPantryItem, updatePantryItemQuantity as dbUpdatePantryItemQuantity, updatePantryItemName as dbUpdatePantryItemName, deletePantryItem as dbDeletePantryItem } from '@/app/actions';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Home, 
@@ -33,9 +33,10 @@ import {
   ChefHat,
   BookOpen,
   Zap,
-  ChevronDown
+  ChevronDown,
+  Archive
 } from 'lucide-react';
-import { AppScreen, ShoppingList, FamilyMember, Activity, ShoppingItem, SavedRecipe } from './types.ts';
+import { AppScreen, ShoppingList, FamilyMember, Activity, ShoppingItem, SavedRecipe, PantryItem } from './types.ts';
 import { MOCK_LISTS, MOCK_FAMILY, MOCK_ACTIVITY, MOCK_ITEMS } from './constants.ts';
 
 const THEMES = [
@@ -58,6 +59,8 @@ type AppContextType = {
   setItems: React.Dispatch<React.SetStateAction<ShoppingItem[]>>;
   lists: ShoppingList[];
   setLists: React.Dispatch<React.SetStateAction<ShoppingList[]>>;
+  pantryItems: PantryItem[];
+  setPantryItems: React.Dispatch<React.SetStateAction<PantryItem[]>>;
   activeListId: string | null;
   setActiveListId: React.Dispatch<React.SetStateAction<string | null>>;
   setCurrentScreen: React.Dispatch<React.SetStateAction<AppScreen>>;
@@ -83,6 +86,7 @@ const NavBar = ({ activeScreen, onScreenChange, isSupermarketMode }: { activeScr
   const tabs: { id: AppScreen, label: string, icon: any, activeColor: string, activeBg: string }[] = [
     { id: 'home', label: 'Início', icon: Home, activeColor: 'text-[#3b82f6]', activeBg: 'bg-[#3b82f6]/10' },
     { id: 'lists', label: 'Listas', icon: List, activeColor: 'text-[#10b981]', activeBg: 'bg-[#10b981]/10' },
+    { id: 'pantry', label: 'Despensa', icon: Archive, activeColor: 'text-[#20c997]', activeBg: 'bg-[#20c997]/10' },
     { id: 'recipes', label: 'Receitas', icon: ChefHat, activeColor: 'text-[#f59e0b]', activeBg: 'bg-[#f59e0b]/10' },
     { id: 'family', label: 'Família', icon: Users, activeColor: 'text-[#8b5cf6]', activeBg: 'bg-[#8b5cf6]/10' },
     { id: 'settings', label: 'Definições', icon: SettingsIcon, activeColor: 'text-[#ec4899]', activeBg: 'bg-[#ec4899]/10' },
@@ -1696,6 +1700,373 @@ const Settings = ({ theme, setTheme }: { theme: string, setTheme: (t: string) =>
   );
 };
 
+const Pantry = () => {
+  const { pantryItems, setPantryItems, lists, items, setItems, setLists } = useAppContext();
+  const { data: session } = useSession();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('Todos');
+  const [newItemName, setNewItemName] = useState('');
+  const [newItemQty, setNewItemQty] = useState('1');
+  const [newItemCategory, setNewItemCategory] = useState('Mercearia');
+  const [isListening, setIsListening] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deleteItemId, setDeleteItemId] = useState<string | null>(null);
+
+  const categories = ['Mercearia', 'Laticínios', 'Congelados', 'Frutas e Legumes', 'Bebidas', 'Higiene', 'Pet Shop', 'Outros'];
+
+  const startListening = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("O teu browser não suporta reconhecimento de voz.");
+      return;
+    }
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'pt-PT';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.onstart = () => setIsListening(true);
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setNewItemName(prev => prev ? `${prev} ${transcript}` : transcript);
+    };
+    recognition.onend = () => setIsListening(false);
+    recognition.onerror = () => setIsListening(false);
+    recognition.start();
+  };
+
+  const handleAddItem = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newItemName.trim()) return;
+
+    const name = newItemName.trim();
+    const qty = newItemQty.trim() || '1';
+    const cat = newItemCategory;
+    const tempId = 'temp_' + Math.random().toString(36).substr(2, 9);
+
+    const newItem: PantryItem = {
+      id: tempId,
+      name,
+      quantity: qty,
+      category: cat
+    };
+
+    setPantryItems(prev => [newItem, ...prev]);
+    setNewItemName('');
+    setNewItemQty('1');
+
+    try {
+      if (session?.user?.name) {
+        logActivity('Adicionou à Despensa', `${qty}x ${name}`, session.user.name).catch(console.error);
+      }
+      const dbItem = await dbAddPantryItem(name, qty, cat);
+      setPantryItems(prev => prev.map(item => item.id === tempId ? dbItem : item));
+    } catch (err) {
+      console.error(err);
+      setPantryItems(prev => prev.filter(item => item.id !== tempId));
+      alert("Erro ao adicionar item à despensa.");
+    }
+  };
+
+  const handleQuantityChange = async (id: string, dir: 'inc' | 'dec') => {
+    const item = pantryItems.find(i => i.id === id);
+    if (!item) return;
+
+    const match = item.quantity.match(/^(\d+(?:\.\d+)?)\s*(.*)$/);
+    let newQty = '';
+    
+    if (match) {
+      const num = parseFloat(match[1]);
+      const suffix = match[2];
+      const nextNum = dir === 'inc' ? num + 1 : Math.max(0, num - 1);
+      
+      if (nextNum === 0) {
+        setDeleteItemId(id);
+        setDeleteModalOpen(true);
+        return;
+      }
+      newQty = suffix ? `${nextNum} ${suffix}` : `${nextNum}`;
+    } else {
+      if (dir === 'dec') {
+        setDeleteItemId(id);
+        setDeleteModalOpen(true);
+        return;
+      } else {
+        newQty = item.quantity + ' +';
+      }
+    }
+
+    setPantryItems(prev => prev.map(i => i.id === id ? { ...i, quantity: newQty } : i));
+
+    try {
+      await dbUpdatePantryItemQuantity(id, newQty);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteItemId) return;
+    const id = deleteItemId;
+    const item = pantryItems.find(i => i.id === id);
+    
+    setPantryItems(prev => prev.filter(i => i.id !== id));
+    setDeleteModalOpen(false);
+    setDeleteItemId(null);
+
+    try {
+      if (item && session?.user?.name) {
+        logActivity('Removeu da Despensa', item.name, session.user.name).catch(console.error);
+      }
+      await dbDeletePantryItem(id);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleTransferToShoppingList = async (pantryItem: PantryItem) => {
+    if (lists.length === 0) {
+      alert("Cria primeiro uma Lista de Compras para adicionares produtos!");
+      return;
+    }
+    const targetList = lists[0];
+    
+    const tempId = 'temp_' + Math.random().toString(36).substr(2, 9);
+    const newShoppingItem = {
+      id: tempId,
+      name: pantryItem.name,
+      quantity: pantryItem.quantity,
+      category: pantryItem.category,
+      checked: false,
+      listId: targetList.id
+    };
+
+    setItems(prev => [...prev, newShoppingItem]);
+    setLists(prev => prev.map(l => l.id === targetList.id ? { ...l, itemCount: l.itemCount + 1 } : l));
+
+    alert(`Adicionado "${pantryItem.quantity}x ${pantryItem.name}" à tua lista de compras "${targetList.name}"!`);
+
+    try {
+      if (session?.user?.name) {
+        logActivity('Adicionou da Despensa', pantryItem.name, session.user.name).catch(console.error);
+      }
+      const dbItem = await dbAddItem(targetList.id, pantryItem.name, pantryItem.category, pantryItem.quantity);
+      setItems(prev => prev.map(i => i.id === tempId ? { ...i, id: dbItem.id } : i));
+    } catch (err) {
+      console.error(err);
+      setItems(prev => prev.filter(i => i.id !== tempId));
+      setLists(prev => prev.map(l => l.id === targetList.id ? { ...l, itemCount: Math.max(0, l.itemCount - 1) } : l));
+    }
+  };
+
+  const filteredItems = pantryItems.filter(item => {
+    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = selectedCategory === 'Todos' || item.category === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
+
+  return (
+    <div className="pb-32 pt-16 px-6 bg-surface min-h-screen text-on-surface">
+      <header className="flex justify-between items-start mb-10">
+        <div>
+          <div className="w-14 h-14 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mb-4">
+            <Archive size={28} />
+          </div>
+          <h2 className="text-3xl font-extrabold tracking-tight text-on-surface">A minha Despensa</h2>
+          <p className="text-sm text-outline">Gere o stock e as quantidades dos teus produtos em casa</p>
+        </div>
+      </header>
+
+      {/* Adicionar Artigo */}
+      <section className="bg-surface-container-low p-6 rounded-[32px] border border-outline-variant/20 mb-8 soft-shadow">
+        <h3 className="text-xs font-bold text-outline uppercase tracking-wider block mb-4">Adicionar Produto à Despensa</h3>
+        <form onSubmit={handleAddItem} className="space-y-4">
+          <div className="flex gap-2">
+            <div className="relative flex-grow">
+              <input 
+                type="text" 
+                placeholder="Ex: Arroz, Massa, Leite..." 
+                value={newItemName}
+                onChange={e => setNewItemName(e.target.value)}
+                className="w-full bg-surface border border-outline-variant/30 rounded-2xl px-4 py-3 text-sm text-on-surface outline-none focus:border-primary font-medium"
+              />
+              <button 
+                type="button" 
+                onClick={startListening} 
+                className={`absolute right-3 top-3 transition-colors ${isListening ? 'text-red-500 animate-pulse' : 'text-outline hover:text-primary'}`}
+              >
+                <Mic size={18} />
+              </button>
+            </div>
+            <input 
+              type="text" 
+              placeholder="Qtd (ex: 2, 500g)" 
+              value={newItemQty}
+              onChange={e => setNewItemQty(e.target.value)}
+              className="w-24 bg-surface border border-outline-variant/30 rounded-2xl px-3 py-3 text-sm text-on-surface text-center outline-none focus:border-primary font-bold"
+            />
+          </div>
+
+          <div className="flex gap-2">
+            <div className="relative flex-grow">
+              <select 
+                value={newItemCategory}
+                onChange={e => setNewItemCategory(e.target.value)}
+                className="w-full bg-surface border border-outline-variant/30 rounded-2xl px-4 py-3 text-sm text-on-surface outline-none focus:border-primary font-medium appearance-none cursor-pointer"
+              >
+                {categories.map(cat => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+              <ChevronDown size={16} className="absolute right-4 top-4 text-outline pointer-events-none" />
+            </div>
+            <button 
+              type="submit"
+              disabled={!newItemName.trim()}
+              className="bg-[#20c997] hover:bg-[#1db889] text-white font-bold text-sm px-6 rounded-2xl transition-all flex items-center justify-center gap-1 active:scale-95 disabled:opacity-50"
+            >
+              <Plus size={18} /> Adicionar
+            </button>
+          </div>
+        </form>
+      </section>
+
+      {/* Filtro e Pesquisa */}
+      <div className="space-y-4 mb-8">
+        <div className="relative">
+          <Search size={18} className="absolute left-4 top-3.5 text-outline" />
+          <input 
+            type="text" 
+            placeholder="Pesquisar na despensa..." 
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+            className="w-full bg-surface-container-low border border-outline-variant/20 rounded-2xl pl-12 pr-4 py-3 text-sm text-on-surface placeholder:text-outline/60 outline-none focus:border-primary font-medium"
+          />
+        </div>
+
+        {/* Chips de Categorias (Horizontal Scroll) */}
+        <div className="flex gap-2 overflow-x-auto no-scrollbar py-1">
+          <button 
+            onClick={() => setSelectedCategory('Todos')}
+            className={`px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap ${selectedCategory === 'Todos' ? 'bg-[#20c997] text-white shadow-md' : 'bg-surface-container-low border border-outline-variant/20 text-outline'}`}
+          >
+            Todos
+          </button>
+          {categories.map(cat => (
+            <button 
+              key={cat}
+              onClick={() => setSelectedCategory(cat)}
+              className={`px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap ${selectedCategory === cat ? 'bg-[#20c997] text-white shadow-md' : 'bg-surface-container-low border border-outline-variant/20 text-outline'}`}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Lista de Itens da Despensa */}
+      <section className="space-y-3">
+        {filteredItems.length > 0 ? (
+          filteredItems.map(item => (
+            <div 
+              key={item.id}
+              className="bg-surface-container-low p-4 rounded-3xl border border-outline-variant/10 flex items-center justify-between soft-shadow"
+            >
+              <div className="flex flex-col">
+                <span className="font-bold text-on-surface text-base">{item.name}</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-outline mt-0.5">{item.category}</span>
+              </div>
+
+              <div className="flex items-center gap-3">
+                {/* Transferir para lista de compras */}
+                <button 
+                  onClick={() => handleTransferToShoppingList(item)}
+                  className="w-9 h-9 bg-primary/10 text-primary rounded-xl flex items-center justify-center hover:bg-primary/20 transition-colors active:scale-90"
+                  title="Adicionar à lista de compras"
+                >
+                  <ShoppingCart size={16} />
+                </button>
+
+                {/* Controlo de Quantidade */}
+                <div className="bg-surface border border-outline-variant/30 rounded-2xl flex items-center p-1 gap-1">
+                  <button 
+                    onClick={() => handleQuantityChange(item.id, 'dec')}
+                    className="w-7 h-7 rounded-xl flex items-center justify-center hover:bg-surface-container text-outline transition-colors"
+                  >
+                    <Minus size={14} />
+                  </button>
+                  <span className="px-2 text-xs font-extrabold text-on-surface min-w-[32px] text-center font-mono">
+                    {item.quantity}
+                  </span>
+                  <button 
+                    onClick={() => handleQuantityChange(item.id, 'inc')}
+                    className="w-7 h-7 rounded-xl flex items-center justify-center hover:bg-surface-container text-outline transition-colors"
+                  >
+                    <Plus size={14} />
+                  </button>
+                </div>
+
+                <button 
+                  onClick={() => {
+                    setDeleteItemId(item.id);
+                    setDeleteModalOpen(true);
+                  }}
+                  className="w-9 h-9 bg-red-500/10 text-red-500 rounded-xl flex items-center justify-center hover:bg-red-500/20 transition-colors active:scale-90"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="bg-surface-container-low p-10 rounded-[32px] border border-outline-variant/10 text-center flex flex-col items-center gap-3 soft-shadow">
+            <Archive size={40} className="text-outline/40" />
+            <p className="text-outline text-sm font-medium">Nenhum produto encontrado na Despensa.</p>
+          </div>
+        )}
+      </section>
+
+      {/* Modal Confirmar Eliminar */}
+      <AnimatePresence>
+        {deleteModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm">
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-surface-container-low border border-outline-variant/30 rounded-[32px] p-6 w-full max-w-sm soft-shadow"
+            >
+              <div className="w-12 h-12 bg-red-500/10 text-red-500 rounded-2xl flex items-center justify-center mb-4">
+                <Trash2 size={24} />
+              </div>
+              <h3 className="text-xl font-bold text-on-surface mb-2">Eliminar Artigo?</h3>
+              <p className="text-sm text-outline mb-6 leading-relaxed">Tens a certeza que queres remover este produto da tua despensa?</p>
+
+              <div className="flex gap-3">
+                <button 
+                  onClick={() => {
+                    setDeleteModalOpen(false);
+                    setDeleteItemId(null);
+                  }}
+                  className="flex-1 h-12 bg-surface-container border border-outline-variant/20 text-on-surface rounded-full font-bold text-sm active:scale-95 transition-all"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  onClick={confirmDelete}
+                  className="flex-1 h-12 bg-red-500 text-white rounded-full font-bold active:scale-95 transition-all text-sm shadow-lg shadow-red-500/20"
+                >
+                  Eliminar
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
 const RecipesOverview = () => {
   const { recipes, setActiveRecipeId, setCurrentScreen } = useAppContext();
 
@@ -1850,6 +2221,7 @@ export default function App() {
   const [theme, setTheme] = useState<string>('dark-midnight');
   const [items, setItems] = useState<ShoppingItem[]>([]);
   const [lists, setLists] = useState<ShoppingList[]>([]);
+  const [pantryItems, setPantryItems] = useState<PantryItem[]>([]);
   const [recipes, setRecipes] = useState<SavedRecipe[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [activeRecipeId, setActiveRecipeId] = useState<string | null>(null);
@@ -1898,6 +2270,9 @@ export default function App() {
         setItems(allItems);
         setIsLoadingDB(false);
       });
+      dbGetPantryItems().then(dbPantryItems => {
+        setPantryItems(dbPantryItems);
+      }).catch(() => {});
       getRecipes().then(dbRecipes => {
         setRecipes(dbRecipes as unknown as SavedRecipe[]);
       });
@@ -1912,7 +2287,7 @@ export default function App() {
   }, [theme]);
 
   return (
-    <AppContext.Provider value={{ items, setItems, lists, setLists, activeListId, setActiveListId, setCurrentScreen, familyMembers, setFamilyMembers, recipes, setRecipes, activeRecipeId, setActiveRecipeId, activities, setActivities }}>
+    <AppContext.Provider value={{ items, setItems, lists, setLists, pantryItems, setPantryItems, activeListId, setActiveListId, setCurrentScreen, familyMembers, setFamilyMembers, recipes, setRecipes, activeRecipeId, setActiveRecipeId, activities, setActivities }}>
       <div className="min-h-screen max-w-lg mx-auto bg-surface relative transition-colors duration-300">
         <AnimatePresence mode="wait">
         {currentScreen === 'onboarding' && (
@@ -1931,6 +2306,11 @@ export default function App() {
         {currentScreen === 'list-detail' && (
           <motion.div key="list" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
             <ListDetail isSupermarketMode={isSupermarketMode} setIsSupermarketMode={setIsSupermarketMode} />
+          </motion.div>
+        )}
+        {currentScreen === 'pantry' && (
+          <motion.div key="pantry" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+            <Pantry />
           </motion.div>
         )}
         {currentScreen === 'recipes' && (

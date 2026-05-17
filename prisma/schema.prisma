@@ -119,3 +119,14 @@ model Activity {
   
   createdAt   DateTime @default(now())
 }
+
+model PantryItem {
+  id          String   @id @default(uuid())
+  name        String
+  quantity    String   @default("1")
+  category    String   @default("Outros")
+  familyId    String   @default("default-family")
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

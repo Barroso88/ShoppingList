@@ -211,3 +211,46 @@ export async function generateRecipeWithAI(prompt: string) {
     return { error: error.message || 'Erro interno ao gerar receita.' };
   }
 }
+
+// --- Pantry ---
+export async function getPantryItems() {
+  const familyId = await getFamilyId();
+  return prisma.pantryItem.findMany({
+    where: { familyId },
+    orderBy: { createdAt: 'desc' }
+  });
+}
+
+export async function addPantryItem(name: string, quantity: string, category: string) {
+  const familyId = await getFamilyId();
+  const item = await prisma.pantryItem.create({
+    data: { name, quantity, category, familyId }
+  });
+  revalidatePath("/");
+  return item;
+}
+
+export async function updatePantryItemQuantity(id: string, quantity: string) {
+  const item = await prisma.pantryItem.update({
+    where: { id },
+    data: { quantity }
+  });
+  revalidatePath("/");
+  return item;
+}
+
+export async function updatePantryItemName(id: string, name: string) {
+  const item = await prisma.pantryItem.update({
+    where: { id },
+    data: { name }
+  });
+  revalidatePath("/");
+  return item;
+}
+
+export async function deletePantryItem(id: string) {
+  await prisma.pantryItem.delete({
+    where: { id }
+  });
+  revalidatePath("/");
+}
