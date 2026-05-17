@@ -31,7 +31,9 @@ import {
   Pencil,
   Minus,
   ChefHat,
-  BookOpen
+  BookOpen,
+  Zap,
+  ChevronDown
 } from 'lucide-react';
 import { AppScreen, ShoppingList, FamilyMember, Activity, ShoppingItem, SavedRecipe } from './types.ts';
 import { MOCK_LISTS, MOCK_FAMILY, MOCK_ACTIVITY, MOCK_ITEMS } from './constants.ts';
@@ -77,7 +79,7 @@ const useAppContext = () => {
 
 // --- Sub-components ---
 
-const NavBar = ({ activeScreen, onScreenChange }: { activeScreen: AppScreen, onScreenChange: (s: AppScreen) => void }) => {
+const NavBar = ({ activeScreen, onScreenChange, isSupermarketMode }: { activeScreen: AppScreen, onScreenChange: (s: AppScreen) => void, isSupermarketMode: boolean }) => {
   const tabs: { id: AppScreen, label: string, icon: any, activeColor: string, activeBg: string }[] = [
     { id: 'home', label: 'Início', icon: Home, activeColor: 'text-[#3b82f6]', activeBg: 'bg-[#3b82f6]/10' },
     { id: 'lists', label: 'Listas', icon: List, activeColor: 'text-[#10b981]', activeBg: 'bg-[#10b981]/10' },
@@ -86,7 +88,7 @@ const NavBar = ({ activeScreen, onScreenChange }: { activeScreen: AppScreen, onS
     { id: 'settings', label: 'Definições', icon: SettingsIcon, activeColor: 'text-[#ec4899]', activeBg: 'bg-[#ec4899]/10' },
   ];
 
-  if (activeScreen === 'onboarding') return null;
+  if (activeScreen === 'onboarding' || isSupermarketMode) return null;
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 pb-6 pt-3 px-6 flex justify-between items-center z-50 bg-black border-t border-white/10 backdrop-blur-md">
@@ -629,12 +631,20 @@ const formatProductName = (name: string) => {
   return formatted.charAt(0).toUpperCase() + formatted.slice(1);
 };
 
-const ListDetail = () => {
+const ListDetail = ({ isSupermarketMode, setIsSupermarketMode }: { isSupermarketMode: boolean, setIsSupermarketMode: (val: boolean) => void }) => {
   const { items, setItems, lists, setLists, activeListId, setActiveListId, setCurrentScreen, familyMembers } = useAppContext();
   const activeList = lists.find(l => l.id === activeListId);
   const listItems = items.filter(item => item.listId === activeListId);
   const categories = Array.from(new Set(listItems.map(item => item.category)));
   const [newItemName, setNewItemName] = useState('');
+
+  const totalItemsCount = listItems.length;
+  const checkedItemsCount = listItems.filter(i => i.checked).length;
+  const progressPercentage = totalItemsCount > 0 ? Math.round((checkedItemsCount / totalItemsCount) * 100) : 0;
+  
+  const uncheckedItems = listItems.filter(item => !item.checked);
+  const checkedItems = listItems.filter(item => item.checked);
+  const uncheckedCategories = Array.from(new Set(uncheckedItems.map(item => item.category)));
   
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [editNameValue, setEditNameValue] = useState('');
@@ -642,6 +652,40 @@ const ListDetail = () => {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleteType, setDeleteType] = useState<'item' | 'list'>('item');
   const [targetId, setTargetId] = useState<string | null>(null);
+
+  const [showCheckedItems, setShowCheckedItems] = useState(false);
+  const wakeLockRef = useRef<any>(null);
+
+  useEffect(() => {
+    const requestWakeLock = async () => {
+      try {
+        if (typeof window !== 'undefined' && 'wakeLock' in navigator) {
+          wakeLockRef.current = await (navigator as any).wakeLock.request('screen');
+          console.log('Screen Wake Lock active');
+        }
+      } catch (err: any) {
+        console.warn(`Wake Lock request failed: ${err.message}`);
+      }
+    };
+
+    const releaseWakeLock = () => {
+      if (wakeLockRef.current) {
+        wakeLockRef.current.release().then(() => {
+          wakeLockRef.current = null;
+          console.log('Screen Wake Lock released');
+        });
+      }
+    };
+
+    if (isSupermarketMode) {
+      requestWakeLock();
+    } else {
+      releaseWakeLock();
+    }
+    return () => {
+      releaseWakeLock();
+    };
+  }, [isSupermarketMode]);
 
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<any>(null);
@@ -843,125 +887,257 @@ const ListDetail = () => {
   if (!activeList) return null;
 
   return (
-    <div className="pb-32 pt-16 px-6">
-      <header className="flex justify-between items-center mb-8">
-        <div className="flex items-center gap-4">
-          <button onClick={() => setCurrentScreen('lists')} className="w-10 h-10 bg-surface-container-low rounded-full flex items-center justify-center text-on-surface shadow-sm">
-            <ChevronLeft size={24} />
-          </button>
-          <h2 className="text-2xl font-bold text-on-surface">{activeList.name}</h2>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="flex -space-x-3">
-            {familyMembers.slice(0, 3).map((f) => (
-              <img key={f.id} src={f.avatar} className="w-10 h-10 rounded-full border-4 border-surface object-cover" />
-            ))}
+    <div className={`pb-32 pt-16 px-6 ${isSupermarketMode ? 'bg-surface transition-colors duration-300' : ''}`}>
+      {isSupermarketMode ? (
+        <div className="flex flex-col gap-4 mb-6">
+          <div className="flex justify-between items-center">
+            <div>
+              <span className="text-[10px] font-extrabold text-[#10b981] uppercase tracking-widest bg-[#10b981]/10 px-2 py-0.5 rounded-md border border-[#10b981]/25">
+                🛒 Modo Supermercado
+              </span>
+              <h2 className="text-3xl font-extrabold text-on-surface tracking-tight mt-2">{activeList.name}</h2>
+            </div>
+            <button 
+              onClick={() => setIsSupermarketMode(false)}
+              className="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 active:scale-95 text-red-500 rounded-full font-bold text-xs transition-all border border-red-500/20 shadow-sm"
+            >
+              Sair
+            </button>
           </div>
-          <button onClick={deleteList} className="w-10 h-10 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center hover:bg-red-500/20 active:scale-90 transition-all shadow-sm">
-            <Trash2 size={18} />
-          </button>
+          
+          {/* Modern Progress Bar */}
+          <div className="bg-surface-container rounded-3xl p-4 border border-outline-variant/10 shadow-sm">
+            <div className="flex justify-between text-[10px] font-bold text-outline uppercase tracking-wider mb-2">
+              <span>Progresso</span>
+              <span className="text-on-surface">{checkedItemsCount}/{totalItemsCount} Itens ({progressPercentage}%)</span>
+            </div>
+            <div className="w-full bg-surface-container-high h-2.5 rounded-full overflow-hidden">
+              <div 
+                className="bg-[#10b981] h-full rounded-full transition-all duration-300"
+                style={{ width: `${progressPercentage}%` }}
+              />
+            </div>
+          </div>
         </div>
-      </header>
+      ) : (
+        <header className="flex justify-between items-center mb-8">
+          <div className="flex items-center gap-4">
+            <button onClick={() => setCurrentScreen('lists')} className="w-10 h-10 bg-surface-container-low rounded-full flex items-center justify-center text-on-surface shadow-sm">
+              <ChevronLeft size={24} />
+            </button>
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2.5">
+                <h2 className="text-2xl font-bold text-on-surface">{activeList.name}</h2>
+                <button 
+                  onClick={() => setIsSupermarketMode(true)}
+                  className="flex items-center gap-1 px-2.5 py-1 bg-[#10b981]/10 hover:bg-[#10b981]/20 text-[#10b981] border border-[#10b981]/20 rounded-full text-[10px] font-extrabold uppercase tracking-wider transition-all active:scale-95"
+                >
+                  <Zap size={10} className="fill-current" />
+                  <span>Supermercado</span>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="flex -space-x-3">
+              {familyMembers.slice(0, 3).map((f) => (
+                <img key={f.id} src={f.avatar} className="w-10 h-10 rounded-full border-4 border-surface object-cover" />
+              ))}
+            </div>
+            <button onClick={deleteList} className="w-10 h-10 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center hover:bg-red-500/20 active:scale-90 transition-all shadow-sm">
+              <Trash2 size={18} />
+            </button>
+          </div>
+        </header>
+      )}
 
-      <form onSubmit={handleAddItem} className="relative mb-8">
-        <div className="flex items-center bg-surface-container-low rounded-2xl h-14 px-5 border border-outline-variant/30 focus-within:border-primary focus-within:ring-2 ring-primary/20 transition-all">
-          <Plus size={20} className="text-primary mr-3 flex-shrink-0" />
-          <input 
-            type="text" 
-            value={newItemName}
-            onChange={e => setNewItemName(e.target.value)}
-            placeholder="Adicionar produto à lista..." 
-            className="flex-grow bg-transparent outline-none text-on-surface placeholder:text-outline-variant font-medium pr-2 min-w-0"
-          />
-          <button 
-            type="button"
-            onClick={toggleListening}
-            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all flex-shrink-0 ${isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-transparent text-outline hover:text-primary active:scale-95'}`}
-          >
-            <Mic size={18} />
-          </button>
-        </div>
-      </form>
+      {!isSupermarketMode && (
+        <form onSubmit={handleAddItem} className="relative mb-8">
+          <div className="flex items-center bg-surface-container-low rounded-2xl h-14 px-5 border border-outline-variant/30 focus-within:border-primary focus-within:ring-2 ring-primary/20 transition-all">
+            <Plus size={20} className="text-primary mr-3 flex-shrink-0" />
+            <input 
+              type="text" 
+              value={newItemName}
+              onChange={e => setNewItemName(e.target.value)}
+              placeholder="Adicionar produto à lista..." 
+              className="flex-grow bg-transparent outline-none text-on-surface placeholder:text-outline-variant font-medium pr-2 min-w-0"
+            />
+            <button 
+              type="button"
+              onClick={toggleListening}
+              className={`w-10 h-10 rounded-full flex items-center justify-center transition-all flex-shrink-0 ${isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-transparent text-outline hover:text-primary active:scale-95'}`}
+            >
+              <Mic size={18} />
+            </button>
+          </div>
+        </form>
+      )}
 
       <div className="space-y-10">
-        {categories.length > 0 ? categories.map((cat) => (
-          <section key={cat}>
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <div className={`w-1.5 h-6 rounded-full ${cat === 'Frutas e Legumes' ? 'bg-green-500' : cat === 'Laticínios' ? 'bg-blue-500' : 'bg-amber-500'}`} />
-                <h3 className="font-bold text-on-surface/80 uppercase tracking-widest text-xs">{cat}</h3>
-              </div>
-              <span className="text-xs font-bold text-outline uppercase tracking-widest">{listItems.filter(i => i.category === cat).length} Itens</span>
-            </div>
-            <div className="space-y-4">
-              {listItems.filter(item => item.category === cat).map((item) => (
-                <div 
-                  key={item.id}
-                  className={`bg-surface-container-low p-5 rounded-3xl soft-shadow border border-outline-variant/10 flex items-start gap-4 transition-all ${item.checked ? 'opacity-50' : ''}`}
-                >
-                  <button 
-                    onClick={() => toggleItem(item.id)}
-                    className={`w-8 h-8 rounded-full border-2 mt-1 transition-all flex items-center justify-center flex-shrink-0 ${item.checked ? 'bg-primary border-primary text-white' : 'border-outline-variant/40'}`}
-                  >
-                    {item.checked && <Check size={16} strokeWidth={3} />}
-                  </button>
-                  <div className="flex-grow">
-                    <div className="flex justify-between items-start">
-                      <div className="flex-grow mr-2">
-                        {editingItemId === item.id ? (
-                           <input 
-                             type="text"
-                             autoFocus
-                             value={editNameValue}
-                             onChange={e => setEditNameValue(e.target.value)}
-                             onBlur={() => saveEdit(item.id)}
-                             onKeyDown={e => e.key === 'Enter' && saveEdit(item.id)}
-                             className="text-lg font-bold leading-none mb-1 bg-surface border-b-2 border-primary outline-none px-1 py-0.5 w-full text-on-surface"
-                           />
-                        ) : (
-                           <h4 className={`text-lg font-bold leading-none mb-1 ${item.checked ? 'line-through' : ''}`}>{item.name}</h4>
-                        )}
-                        {item.isUrgent && <span className="text-[10px] font-bold text-red-600 uppercase tracking-widest">URGENTE</span>}
-                        {item.notes && <p className="text-xs text-outline font-medium italic mt-1">{item.notes}</p>}
-                      </div>
-                      <div className="flex flex-col items-end gap-2 flex-shrink-0">
-                        <div className="flex items-center gap-1 bg-surface-container rounded-full p-1 border border-outline-variant/20">
-                          <button onClick={() => adjustQuantity(item.id, -1)} className="w-6 h-6 rounded-full flex items-center justify-center text-outline hover:text-primary active:bg-outline-variant/20">
-                            <Minus size={12} strokeWidth={3} />
-                          </button>
-                          <span className="text-[10px] font-bold text-on-surface px-1 min-w-[20px] text-center">
-                            {item.quantity}
-                          </span>
-                          <button onClick={() => adjustQuantity(item.id, 1)} className="w-6 h-6 rounded-full flex items-center justify-center text-outline hover:text-primary active:bg-outline-variant/20">
-                            <Plus size={12} strokeWidth={3} />
-                          </button>
+        {isSupermarketMode ? (
+          <div className="space-y-8">
+            {uncheckedItems.length > 0 ? (
+              uncheckedCategories.map((cat) => (
+                <section key={cat} className="bg-surface-container-low/60 p-5 rounded-[32px] border border-outline-variant/10 shadow-sm">
+                  <div className="flex items-center justify-between mb-4 px-1">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-1.5 h-5 rounded-full ${cat === 'Frutas e Legumes' ? 'bg-green-500' : cat === 'Laticínios' ? 'bg-blue-500' : 'bg-amber-500'}`} />
+                      <h3 className="font-bold text-on-surface/90 uppercase tracking-widest text-[10px]">{cat}</h3>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    {uncheckedItems.filter(item => item.category === cat).map((item) => (
+                      <div 
+                        key={item.id}
+                        onClick={() => toggleItem(item.id)}
+                        className="bg-surface-container p-5 rounded-2xl border border-outline-variant/10 flex items-center justify-between gap-4 cursor-pointer hover:bg-surface-container-high active:scale-[0.99] transition-all shadow-sm"
+                      >
+                        <div className="flex items-center gap-4 min-w-0">
+                          <div className="w-8 h-8 rounded-full border-2 border-[#10b981]/40 flex-shrink-0 flex items-center justify-center text-transparent transition-all">
+                            {/* Empty circle */}
+                          </div>
+                          <div className="min-w-0">
+                            <h4 className="text-lg font-bold text-on-surface truncate">{item.name}</h4>
+                            {item.notes && <p className="text-xs text-outline font-medium italic mt-1 truncate">{item.notes}</p>}
+                          </div>
                         </div>
-                        <div className="flex items-center gap-1">
-                           {editingItemId === item.id ? (
-                             <button onClick={() => saveEdit(item.id)} className="p-2 text-white bg-primary active:scale-90 transition-all rounded-full">
-                                <Check size={16} />
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <span className="text-sm font-extrabold bg-[#10b981]/10 text-[#10b981] px-3 py-1 rounded-full border border-[#10b981]/25">
+                            x{item.quantity}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              ))
+            ) : (
+              <div className="text-center py-16 bg-[#10b981]/5 border border-[#10b981]/15 rounded-[32px] p-8 flex flex-col items-center">
+                <div className="w-16 h-16 bg-[#10b981]/10 text-[#10b981] rounded-full flex items-center justify-center mb-4">
+                  <Check size={36} strokeWidth={3} className="animate-bounce" />
+                </div>
+                <h4 className="text-xl font-bold text-on-surface">Tudo Comprado! 🥳</h4>
+                <p className="text-sm text-outline mt-1 max-w-xs mx-auto text-center leading-relaxed">Parabéns! Compraste todos os produtos da tua lista.</p>
+              </div>
+            )}
+
+            {/* Collapsed checked items at the bottom */}
+            {checkedItems.length > 0 && (
+              <section className="mt-10">
+                <button 
+                  onClick={() => setShowCheckedItems(!showCheckedItems)}
+                  className="w-full flex justify-between items-center py-4 px-6 bg-surface-container rounded-2xl border border-outline-variant/10 text-outline hover:text-on-surface transition-all active:scale-[0.99]"
+                >
+                  <span className="text-xs font-bold uppercase tracking-widest flex items-center gap-2">
+                    <Check size={14} className="text-[#10b981]" />
+                    Comprados ({checkedItems.length})
+                  </span>
+                  <ChevronDown size={16} className={`transition-transform ${showCheckedItems ? 'rotate-180' : ''}`} />
+                </button>
+                {showCheckedItems && (
+                  <div className="space-y-3 mt-4">
+                    {checkedItems.map((item) => (
+                      <div 
+                        key={item.id}
+                        onClick={() => toggleItem(item.id)}
+                        className="bg-surface-container-low/40 p-4 rounded-2xl border border-outline-variant/5 flex items-center justify-between gap-4 cursor-pointer hover:bg-surface-container-low opacity-60 transition-all"
+                      >
+                        <div className="flex items-center gap-3.5 min-w-0">
+                          <div className="w-8 h-8 rounded-full bg-[#10b981] flex-shrink-0 flex items-center justify-center text-white border border-[#10b981]">
+                            <Check size={16} strokeWidth={3} />
+                          </div>
+                          <h4 className="text-lg font-bold text-on-surface line-through truncate">{item.name}</h4>
+                        </div>
+                        <span className="text-xs font-bold text-outline">
+                          x{item.quantity}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
+            )}
+          </div>
+        ) : (
+          categories.length > 0 ? categories.map((cat) => (
+            <section key={cat}>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <div className={`w-1.5 h-6 rounded-full ${cat === 'Frutas e Legumes' ? 'bg-green-500' : cat === 'Laticínios' ? 'bg-blue-500' : 'bg-amber-500'}`} />
+                  <h3 className="font-bold text-on-surface/80 uppercase tracking-widest text-xs">{cat}</h3>
+                </div>
+                <span className="text-xs font-bold text-outline uppercase tracking-widest">{listItems.filter(i => i.category === cat).length} Itens</span>
+              </div>
+              <div className="space-y-4">
+                {listItems.filter(item => item.category === cat).map((item) => (
+                  <div 
+                    key={item.id}
+                    className={`bg-surface-container-low p-5 rounded-3xl soft-shadow border border-outline-variant/10 flex items-start gap-4 transition-all ${item.checked ? 'opacity-50' : ''}`}
+                  >
+                    <button 
+                      onClick={() => toggleItem(item.id)}
+                      className={`w-8 h-8 rounded-full border-2 mt-1 transition-all flex items-center justify-center flex-shrink-0 ${item.checked ? 'bg-primary border-primary text-white' : 'border-outline-variant/40'}`}
+                    >
+                      {item.checked && <Check size={16} strokeWidth={3} />}
+                    </button>
+                    <div className="flex-grow">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-grow mr-2">
+                          {editingItemId === item.id ? (
+                             <input 
+                               type="text"
+                               autoFocus
+                               value={editNameValue}
+                               onChange={e => setEditNameValue(e.target.value)}
+                               onBlur={() => saveEdit(item.id)}
+                               onKeyDown={e => e.key === 'Enter' && saveEdit(item.id)}
+                               className="text-lg font-bold leading-none mb-1 bg-surface border-b-2 border-primary outline-none px-1 py-0.5 w-full text-on-surface"
+                             />
+                          ) : (
+                             <h4 className={`text-lg font-bold leading-none mb-1 ${item.checked ? 'line-through' : ''}`}>{item.name}</h4>
+                          )}
+                          {item.isUrgent && <span className="text-[10px] font-bold text-red-600 uppercase tracking-widest">URGENTE</span>}
+                          {item.notes && <p className="text-xs text-outline font-medium italic mt-1">{item.notes}</p>}
+                        </div>
+                        <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                          <div className="flex items-center gap-1 bg-surface-container rounded-full p-1 border border-outline-variant/20">
+                            <button onClick={() => adjustQuantity(item.id, -1)} className="w-6 h-6 rounded-full flex items-center justify-center text-outline hover:text-primary active:bg-outline-variant/20">
+                              <Minus size={12} strokeWidth={3} />
+                            </button>
+                            <span className="text-[10px] font-bold text-on-surface px-1 min-w-[20px] text-center">
+                              {item.quantity}
+                            </span>
+                            <button onClick={() => adjustQuantity(item.id, 1)} className="w-6 h-6 rounded-full flex items-center justify-center text-outline hover:text-primary active:bg-outline-variant/20">
+                              <Plus size={12} strokeWidth={3} />
+                            </button>
+                          </div>
+                          <div className="flex items-center gap-1">
+                             {editingItemId === item.id ? (
+                               <button onClick={() => saveEdit(item.id)} className="p-2 text-white bg-primary active:scale-90 transition-all rounded-full">
+                                  <Check size={16} />
+                               </button>
+                             ) : (
+                               <button onClick={() => startEdit(item.id, item.name)} className="p-2 text-green-500 bg-green-500/10 active:scale-90 transition-all rounded-full">
+                                  <Pencil size={16} />
+                               </button>
+                             )}
+                             <button onClick={() => deleteItem(item.id)} className="p-2 text-red-500 bg-red-500/10 active:scale-90 transition-all rounded-full">
+                                <Trash2 size={16} />
                              </button>
-                           ) : (
-                             <button onClick={() => startEdit(item.id, item.name)} className="p-2 text-green-500 bg-green-500/10 active:scale-90 transition-all rounded-full">
-                                <Pencil size={16} />
-                             </button>
-                           )}
-                           <button onClick={() => deleteItem(item.id)} className="p-2 text-red-500 bg-red-500/10 active:scale-90 transition-all rounded-full">
-                              <Trash2 size={16} />
-                           </button>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
+            </section>
+          )) : (
+            <div className="text-center py-20 text-outline flex flex-col items-center">
+              <ShoppingCart size={48} className="mb-4 opacity-50" />
+              <p>A tua lista está vazia. Adiciona o primeiro item!</p>
             </div>
-          </section>
-        )) : (
-          <div className="text-center py-20 text-outline flex flex-col items-center">
-            <ShoppingCart size={48} className="mb-4 opacity-50" />
-            <p>A tua lista está vazia. Adiciona o primeiro item!</p>
-          </div>
+          )
         )}
       </div>
 
@@ -1528,6 +1704,7 @@ export default function App() {
   const [activeListId, setActiveListId] = useState<string | null>(null);
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
   const [isLoadingDB, setIsLoadingDB] = useState(true);
+  const [isSupermarketMode, setIsSupermarketMode] = useState(false);
 
   useEffect(() => {
     if (status === 'authenticated' && session?.user) {
@@ -1604,7 +1781,7 @@ export default function App() {
         )}
         {currentScreen === 'list-detail' && (
           <motion.div key="list" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-            <ListDetail />
+            <ListDetail isSupermarketMode={isSupermarketMode} setIsSupermarketMode={setIsSupermarketMode} />
           </motion.div>
         )}
         {currentScreen === 'recipes' && (
@@ -1629,7 +1806,7 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      <NavBar activeScreen={currentScreen} onScreenChange={setCurrentScreen} />
+      <NavBar activeScreen={currentScreen} onScreenChange={setCurrentScreen} isSupermarketMode={isSupermarketMode} />
       </div>
     </AppContext.Provider>
   );
