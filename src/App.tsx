@@ -80,7 +80,27 @@ const useAppContext = () => {
   return ctx;
 };
 
-// --- Sub-components ---
+const getListColor = (name: string, id: string) => {
+  const listColors = [
+    '#ff6b6b', // Coral Red
+    '#00ff88', // Green Emerald
+    '#00f3ff', // Cyan
+    '#ffaa00', // Gold/Orange
+    '#ff00cc', // Hot Pink
+    '#cc5de8', // Purple
+    '#ff2e7e', // Neon Rose
+    '#20c997', // Teal
+    '#51cf66', // Emerald
+    '#fcc419', // Amber
+  ];
+  let hash = 0;
+  const key = name + id;
+  for (let i = 0; i < key.length; i++) {
+    hash = key.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % listColors.length;
+  return listColors[index];
+};
 
 const NavBar = ({ activeScreen, onScreenChange, isSupermarketMode }: { activeScreen: AppScreen, onScreenChange: (s: AppScreen) => void, isSupermarketMode: boolean }) => {
   const tabs: { id: AppScreen, label: string, icon: any, activeColor: string, activeBg: string, shadowColor: string }[] = [
@@ -601,7 +621,7 @@ const Dashboard = () => {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {lists.length > 0 ? lists.map((list) => {
-            const cardColor = list.color || '#ff6b6b';
+            const cardColor = getListColor(list.name, list.id);
             return (
               <div 
                 key={list.id} 
@@ -749,7 +769,7 @@ const ListsOverview = () => {
           </div>
         ) : (
           lists.map(list => {
-            const cardColor = list.color || '#ff6b6b';
+            const cardColor = getListColor(list.name, list.id);
             return (
               <div 
                 key={list.id} 
