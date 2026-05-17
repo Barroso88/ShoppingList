@@ -84,18 +84,18 @@ const useAppContext = () => {
 
 const NavBar = ({ activeScreen, onScreenChange, isSupermarketMode }: { activeScreen: AppScreen, onScreenChange: (s: AppScreen) => void, isSupermarketMode: boolean }) => {
   const tabs: { id: AppScreen, label: string, icon: any, activeColor: string, activeBg: string, shadowColor: string }[] = [
-    { id: 'home', label: 'Início', icon: Home, activeColor: 'text-[#00e5ff]', activeBg: 'bg-[#00e5ff]/10', shadowColor: 'rgba(0, 229, 255, 0.4)' },
-    { id: 'lists', label: 'Listas', icon: List, activeColor: 'text-[#00f5a0]', activeBg: 'bg-[#00f5a0]/10', shadowColor: 'rgba(0, 245, 160, 0.4)' },
-    { id: 'pantry', label: 'Despensa', icon: Archive, activeColor: 'text-[#00ffcc]', activeBg: 'bg-[#00ffcc]/10', shadowColor: 'rgba(0, 255, 204, 0.4)' },
-    { id: 'recipes', label: 'Receitas', icon: ChefHat, activeColor: 'text-[#ffaa00]', activeBg: 'bg-[#ffaa00]/10', shadowColor: 'rgba(255, 170, 0, 0.4)' },
-    { id: 'family', label: 'Família', icon: Users, activeColor: 'text-[#d946ef]', activeBg: 'bg-[#d946ef]/10', shadowColor: 'rgba(217, 70, 239, 0.4)' },
-    { id: 'settings', label: 'Definições', icon: SettingsIcon, activeColor: 'text-[#ff2e93]', activeBg: 'bg-[#ff2e93]/10', shadowColor: 'rgba(255, 46, 147, 0.4)' },
+    { id: 'home', label: 'Início', icon: Home, activeColor: 'text-[#00f3ff]', activeBg: 'bg-[#00f3ff]/15', shadowColor: 'rgba(0, 243, 255, 0.8)' },
+    { id: 'lists', label: 'Listas', icon: List, activeColor: 'text-[#00ff88]', activeBg: 'bg-[#00ff88]/15', shadowColor: 'rgba(0, 255, 136, 0.8)' },
+    { id: 'pantry', label: 'Despensa', icon: Archive, activeColor: 'text-[#00fcdb]', activeBg: 'bg-[#00fcdb]/15', shadowColor: 'rgba(0, 252, 219, 0.8)' },
+    { id: 'recipes', label: 'Receitas', icon: ChefHat, activeColor: 'text-[#ffaa00]', activeBg: 'bg-[#ffaa00]/15', shadowColor: 'rgba(255, 170, 0, 0.8)' },
+    { id: 'family', label: 'Família', icon: Users, activeColor: 'text-[#ff00cc]', activeBg: 'bg-[#ff00cc]/15', shadowColor: 'rgba(255, 0, 204, 0.8)' },
+    { id: 'settings', label: 'Definições', icon: SettingsIcon, activeColor: 'text-[#ff2e7e]', activeBg: 'bg-[#ff2e7e]/15', shadowColor: 'rgba(255, 46, 126, 0.8)' },
   ];
 
   if (activeScreen === 'onboarding' || isSupermarketMode) return null;
 
   return (
-    <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-md sm:max-w-xl md:max-w-2xl lg:max-w-3xl z-50 bg-[#0d0e12]/85 border border-white/10 backdrop-blur-xl py-2.5 px-3 sm:px-6 flex justify-between items-center rounded-3xl soft-shadow shadow-2xl shadow-black/90">
+    <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-md sm:max-w-xl md:max-w-2xl lg:max-w-3xl z-50 bg-[#07080b]/92 border border-white/[0.08] backdrop-blur-2xl py-3 px-4 sm:px-6 flex justify-between items-center rounded-[28px] soft-shadow shadow-2xl shadow-black/95">
       {tabs.map((tab) => {
         const Icon = tab.icon;
         const isActive = activeScreen === tab.id;
@@ -103,8 +103,8 @@ const NavBar = ({ activeScreen, onScreenChange, isSupermarketMode }: { activeScr
           <button 
             key={tab.id}
             onClick={() => onScreenChange(tab.id)}
-            className={`flex-1 flex flex-col items-center gap-0.5 transition-all relative py-1 rounded-2xl ${tab.activeColor} ${isActive ? 'scale-105 opacity-100' : 'opacity-55 hover:opacity-90 hover:scale-105'}`}
-            style={{ transitionDuration: '250ms' }}
+            className={`flex-1 flex flex-col items-center gap-1 transition-all relative py-1.5 rounded-2xl ${tab.activeColor} ${isActive ? 'scale-105 opacity-100 font-bold' : 'opacity-60 hover:opacity-95 hover:scale-105 font-medium'}`}
+            style={{ transitionDuration: '200ms' }}
           >
             {/* Slideable active tab background pill */}
             {isActive && (
@@ -118,11 +118,13 @@ const NavBar = ({ activeScreen, onScreenChange, isSupermarketMode }: { activeScr
             <div 
               className="relative z-10 flex flex-col items-center gap-0.5"
               style={{ 
-                filter: isActive ? `drop-shadow(0 0 6px ${tab.shadowColor})` : 'none'
+                filter: isActive 
+                  ? `drop-shadow(0 0 10px ${tab.shadowColor}) drop-shadow(0 0 2px ${tab.shadowColor})` 
+                  : `drop-shadow(0 0 1.5px ${tab.shadowColor})`
               }}
             >
-              <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
-              <span className={`text-[9px] uppercase tracking-tight ${isActive ? 'font-bold' : 'font-semibold'}`}>
+              <Icon size={23} strokeWidth={isActive ? 2.3 : 1.8} />
+              <span className="text-[9.5px] uppercase tracking-wider scale-90">
                 {tab.label}
               </span>
             </div>
