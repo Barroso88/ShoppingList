@@ -855,10 +855,6 @@ const ListDetail = () => {
           </div>
         )}
       </div>
-
-      <button className="fixed bottom-32 right-8 w-16 h-16 bg-primary text-white rounded-[24px] soft-shadow flex items-center justify-center active:scale-90 transition-all z-40">
-        <Plus size={32} />
-      </button>
     </div>
   );
 };
