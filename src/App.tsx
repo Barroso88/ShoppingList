@@ -676,8 +676,27 @@ const formatProductName = (name: string) => {
   return formatted.charAt(0).toUpperCase() + formatted.slice(1);
 };
 
+const sumQuantities = (q1: string, q2: string): string => {
+  const match1 = q1.trim().match(/^(\d+(?:\.\d+)?)\s*(.*)$/);
+  const match2 = q2.trim().match(/^(\d+(?:\.\d+)?)\s*(.*)$/);
+
+  if (match1 && match2) {
+    const num1 = parseFloat(match1[1]);
+    const num2 = parseFloat(match2[1]);
+    const total = num1 + num2;
+    const suffix = match1[2] || match2[2] || '';
+    return suffix ? `${total} ${suffix}`.trim() : `${total}`;
+  } else if (match1) {
+    return q1;
+  } else if (match2) {
+    return q2;
+  }
+  return q1;
+};
+
 const ListDetail = ({ isSupermarketMode, setIsSupermarketMode }: { isSupermarketMode: boolean, setIsSupermarketMode: (val: boolean) => void }) => {
-  const { items, setItems, lists, setLists, activeListId, setActiveListId, setCurrentScreen, familyMembers } = useAppContext();
+  const { items, setItems, lists, setLists, pantryItems, setPantryItems, activeListId, setActiveListId, setCurrentScreen, familyMembers } = useAppContext();
+  const { data: session } = useSession();
   const activeList = lists.find(l => l.id === activeListId);
   const listItems = items.filter(item => item.listId === activeListId);
   const categories = Array.from(new Set(listItems.map(item => item.category)));
@@ -820,14 +839,59 @@ const ListDetail = ({ isSupermarketMode, setIsSupermarketMode }: { isSupermarket
     recognition.start();
   };
 
-  const toggleItem = (id: string) => {
+  const toggleItem = async (id: string) => {
     const item = items.find(i => i.id === id);
     if (!item) return;
-    setItems(prev => prev.map(i => i.id === id ? { ...i, checked: !i.checked } : i));
+    
+    const newChecked = !item.checked;
+    setItems(prev => prev.map(i => i.id === id ? { ...i, checked: newChecked } : i));
+    
     if (!id.startsWith('temp_')) {
-      dbToggleItemChecked(id, !item.checked).catch(e => {
+      dbToggleItemChecked(id, newChecked).catch(e => {
         setItems(prev => prev.map(i => i.id === id ? { ...i, checked: item.checked } : i));
       });
+    }
+
+    // Auto-add to Pantry when checked (bought)
+    if (newChecked) {
+      const existingPantryItem = pantryItems.find(
+        pi => pi.name.trim().toLowerCase() === item.name.trim().toLowerCase()
+      );
+
+      if (existingPantryItem) {
+        const newQty = sumQuantities(existingPantryItem.quantity, item.quantity);
+        setPantryItems(prev => prev.map(pi => pi.id === existingPantryItem.id ? { ...pi, quantity: newQty } : pi));
+        
+        try {
+          await dbUpdatePantryItemQuantity(existingPantryItem.id, newQty);
+          if (session?.user?.name) {
+            logActivity('Atualizou Despensa', `${newQty}x ${existingPantryItem.name} (Comprado)`, session.user.name).catch(console.error);
+          }
+        } catch (err) {
+          console.error("Erro ao atualizar quantidade na despensa:", err);
+        }
+      } else {
+        const tempPantryId = 'temp_pantry_' + Math.random().toString(36).substr(2, 9);
+        const newPantryItem: PantryItem = {
+          id: tempPantryId,
+          name: item.name,
+          quantity: item.quantity,
+          category: item.category
+        };
+
+        setPantryItems(prev => [newPantryItem, ...prev]);
+
+        try {
+          const dbPantryItem = await dbAddPantryItem(item.name, item.quantity, item.category);
+          setPantryItems(prev => prev.map(pi => pi.id === tempPantryId ? dbPantryItem : pi));
+          if (session?.user?.name) {
+            logActivity('Adicionou à Despensa', `${item.quantity}x ${item.name} (Comprado)`, session.user.name).catch(console.error);
+          }
+        } catch (err) {
+          console.error("Erro ao adicionar à despensa:", err);
+          setPantryItems(prev => prev.filter(pi => pi.id !== tempPantryId));
+        }
+      }
     }
   };
 
