@@ -20,6 +20,7 @@ FROM base AS runner
 WORKDIR /app
 
 ENV NODE_ENV="production"
+RUN apk add --no-cache openssl libc6-compat
 
 # Don't run production as root
 RUN addgroup --system --gid 1001 nodejs
