@@ -66,6 +66,8 @@ type AppContextType = {
   setRecipes: React.Dispatch<React.SetStateAction<SavedRecipe[]>>;
   activeRecipeId: string | null;
   setActiveRecipeId: React.Dispatch<React.SetStateAction<string | null>>;
+  activities: Activity[];
+  setActivities: React.Dispatch<React.SetStateAction<Activity[]>>;
 };
 const AppContext = createContext<AppContextType | null>(null);
 const useAppContext = () => {
@@ -205,6 +207,7 @@ const Onboarding = ({ onStart }: { onStart: () => void }) => {
 
 const AiRecipeGenerator = () => {
   const { setItems, setLists, setRecipes } = useAppContext();
+  const { data: session } = useSession();
   const [prompt, setPrompt] = useState('');
   const [loading, setLoading] = useState(false);
   const [recipe, setRecipe] = useState<any>(null);
@@ -379,7 +382,7 @@ const Dashboard = () => {
   const [isListening, setIsListening] = useState(false);
 
   const startListening = () => {
-    const SpeechRecognition = window.SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
       alert("O teu browser não suporta reconhecimento de voz.");
       return;
@@ -496,6 +499,7 @@ const Dashboard = () => {
 
 const ListsOverview = () => {
   const { lists, setLists, setActiveListId, setCurrentScreen } = useAppContext();
+  const { data: session } = useSession();
   const [isCreatingList, setIsCreatingList] = useState(false);
   const [newListName, setNewListName] = useState('');
 
@@ -872,7 +876,7 @@ const ListDetail = () => {
 };
 
 const Family = () => {
-  const { familyMembers, setFamilyMembers } = useAppContext();
+  const { familyMembers, activities } = useAppContext();
   const [isInviting, setIsInviting] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   
@@ -1221,12 +1225,21 @@ const RecipeDetail = () => {
 export default function App() {
   const { status, data: session } = useSession();
   const [currentScreen, setCurrentScreen] = useState<AppScreen>('onboarding');
-  
+  const [theme, setTheme] = useState<string>('dark-midnight');
+  const [items, setItems] = useState<ShoppingItem[]>([]);
+  const [lists, setLists] = useState<ShoppingList[]>([]);
+  const [recipes, setRecipes] = useState<SavedRecipe[]>([]);
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [activeRecipeId, setActiveRecipeId] = useState<string | null>(null);
+  const [activeListId, setActiveListId] = useState<string | null>(null);
+  const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
+  const [isLoadingDB, setIsLoadingDB] = useState(true);
+
   useEffect(() => {
     if (status === 'authenticated' && session?.user) {
       setCurrentScreen('home');
       setFamilyMembers([{
-        id: session.user.id || '1',
+        id: session.user.email || '1',
         name: session.user.name || 'Utilizador',
         role: 'Admin',
         avatar: session.user.image || '',
@@ -1237,10 +1250,6 @@ export default function App() {
       setFamilyMembers([]);
     }
   }, [status, session]);
-  const [theme, setTheme] = useState<string>('dark-midnight');
-  const [items, setItems] = useState<ShoppingItem[]>([]);
-  const [lists, setLists] = useState<ShoppingList[]>([]);
-  const [isLoadingDB, setIsLoadingDB] = useState(true);
 
   useEffect(() => {
     if (status === 'authenticated') {
@@ -1251,7 +1260,8 @@ export default function App() {
           color: list.color,
           icon: list.icon,
           itemCount: list.items.length,
-          completedCount: list.items.filter(i => i.checked).length
+          completedCount: list.items.filter(i => i.checked).length,
+          lastEdited: 'agora mesmo'
         }));
         setLists(mappedLists);
         
@@ -1276,18 +1286,13 @@ export default function App() {
       });
     }
   }, [status]);
-  const [recipes, setRecipes] = useState<SavedRecipe[]>([]);
-  const [activities, setActivities] = useState<Activity[]>([]);
-  const [activeRecipeId, setActiveRecipeId] = useState<string | null>(null);
-  const [activeListId, setActiveListId] = useState<string | null>(null);
-  const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
 
   return (
-    <AppContext.Provider value={{ items, setItems, lists, setLists, activeListId, setActiveListId, setCurrentScreen, familyMembers, setFamilyMembers, recipes, setRecipes, activeRecipeId, setActiveRecipeId }}>
+    <AppContext.Provider value={{ items, setItems, lists, setLists, activeListId, setActiveListId, setCurrentScreen, familyMembers, setFamilyMembers, recipes, setRecipes, activeRecipeId, setActiveRecipeId, activities, setActivities }}>
       <div className="min-h-screen max-w-lg mx-auto bg-surface relative transition-colors duration-300">
         <AnimatePresence mode="wait">
         {currentScreen === 'onboarding' && (

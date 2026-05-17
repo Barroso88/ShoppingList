@@ -39,10 +39,8 @@ export interface FamilyMember {
 
 export interface Activity {
   id: string;
-  user: string;
+  userName: string;
   action: string;
-  item: string;
   target: string;
-  time: string;
-  avatar: string;
+  createdAt: Date;
 }
