@@ -1,3 +1,4 @@
+"use client";
 import { useState, useEffect, createContext, useContext } from 'react';
 import { GoogleGenAI } from '@google/genai';
 import { motion, AnimatePresence } from 'motion/react';
@@ -561,7 +562,7 @@ const formatProductName = (name: string) => {
 };
 
 const ListDetail = () => {
-  const { items, setItems, lists, setLists, activeListId, setCurrentScreen, familyMembers } = useAppContext();
+  const { items, setItems, lists, setLists, activeListId, setActiveListId, setCurrentScreen, familyMembers } = useAppContext();
   const activeList = lists.find(l => l.id === activeListId);
   const listItems = items.filter(item => item.listId === activeListId);
   const categories = Array.from(new Set(listItems.map(item => item.category)));
