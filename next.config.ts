@@ -1,6 +1,6 @@
-import type { NextConfig } from "next";
+// Next.js configuration
 
-const nextConfig: NextConfig = {
+const nextConfig = {
   output: "standalone",
   eslint: {
     ignoreDuringBuilds: true,
