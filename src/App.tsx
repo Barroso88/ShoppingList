@@ -2204,6 +2204,27 @@ const Pantry = () => {
     await handleTransferToShoppingList(item, listId);
   };
 
+  const getCategoryStyle = (category: string) => {
+    switch (category) {
+      case 'Mercearia':
+        return { color: '#ff922b', bg: '#ff922b15', border: '#ff922b30', emoji: '🌾' };
+      case 'Laticínios':
+        return { color: '#339af0', bg: '#339af015', border: '#339af030', emoji: '🥛' };
+      case 'Congelados':
+        return { color: '#22b8cf', bg: '#22b8cf15', border: '#22b8cf30', emoji: '❄️' };
+      case 'Frutas e Legumes':
+        return { color: '#51cf66', bg: '#51cf6615', border: '#51cf6630', emoji: '🥦' };
+      case 'Bebidas':
+        return { color: '#cc5de8', bg: '#cc5de815', border: '#cc5de830', emoji: '🥤' };
+      case 'Higiene':
+        return { color: '#f06595', bg: '#f0659515', border: '#f0659530', emoji: '🧼' };
+      case 'Pet Shop':
+        return { color: '#ffc078', bg: '#ffc07815', border: '#ffc07830', emoji: '🐶' };
+      default:
+        return { color: '#adb5bd', bg: '#adb5bd15', border: '#adb5bd30', emoji: '📦' };
+    }
+  };
+
   const filteredItems = pantryItems.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'Todos' || item.category === selectedCategory;
@@ -2212,19 +2233,29 @@ const Pantry = () => {
 
   return (
     <div className="pb-32 pt-16 px-6 bg-surface min-h-screen text-on-surface">
-      <header className="flex justify-between items-start mb-10">
+      <header className="flex justify-between items-center mb-10">
         <div>
-          <div className="w-14 h-14 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mb-4">
+          <div className="w-14 h-14 bg-gradient-to-tr from-[#20c997] to-[#00f3ff] text-white rounded-2xl flex items-center justify-center mb-4 soft-shadow shadow-[#20c997]/25">
             <Archive size={28} />
           </div>
           <h2 className="text-3xl font-extrabold tracking-tight text-on-surface">A minha Despensa</h2>
-          <p className="text-sm text-outline">Gere o stock e as quantidades dos teus produtos em casa</p>
+          <div className="flex items-center gap-2 mt-1">
+            <p className="text-sm text-outline">Gere o stock e as quantidades dos teus produtos em casa</p>
+            <span className="w-1.5 h-1.5 rounded-full bg-[#20c997]"></span>
+            <span className="text-xs font-bold text-[#20c997] bg-[#20c997]/10 px-2 py-0.5 rounded-full">
+              {pantryItems.length} produtos
+            </span>
+          </div>
         </div>
       </header>
 
       {/* Adicionar Artigo */}
-      <section className="bg-surface-container-low p-6 rounded-[32px] border border-outline-variant/20 mb-8 soft-shadow">
-        <h3 className="text-xs font-bold text-outline uppercase tracking-wider block mb-4">Adicionar Produto à Despensa</h3>
+      <section className="bg-surface-container-low p-6 rounded-[32px] border border-outline-variant/15 mb-8 soft-shadow relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-48 h-48 bg-[#20c997]/5 rounded-full blur-3xl pointer-events-none"></div>
+        <h3 className="text-xs font-bold text-[#20c997] uppercase tracking-wider block mb-4 flex items-center gap-1.5">
+          <span className="w-2 h-2 rounded-full bg-[#20c997] animate-pulse"></span>
+          Novo Produto na Despensa
+        </h3>
         <form onSubmit={handleAddItem} className="space-y-4">
           <div className="flex gap-2">
             <div className="relative flex-grow">
@@ -2233,12 +2264,12 @@ const Pantry = () => {
                 placeholder="Ex: Arroz, Massa, Leite..." 
                 value={newItemName}
                 onChange={e => setNewItemName(e.target.value)}
-                className="w-full bg-surface border border-outline-variant/30 rounded-2xl px-4 py-3 text-sm text-on-surface outline-none focus:border-primary font-medium"
+                className="w-full bg-surface/50 border border-outline-variant/30 rounded-2xl pl-4 pr-10 py-3 text-sm text-on-surface outline-none focus:border-[#20c997] transition-all font-medium placeholder:text-outline/40 backdrop-blur-sm"
               />
               <button 
                 type="button" 
                 onClick={startListening} 
-                className={`absolute right-3 top-3 transition-colors ${isListening ? 'text-red-500 animate-pulse' : 'text-outline hover:text-primary'}`}
+                className={`absolute right-3 top-3 transition-colors ${isListening ? 'text-red-500 animate-pulse' : 'text-outline hover:text-[#20c997]'}`}
               >
                 <Mic size={18} />
               </button>
@@ -2248,7 +2279,7 @@ const Pantry = () => {
               placeholder="Qtd (ex: 2, 500g)" 
               value={newItemQty}
               onChange={e => setNewItemQty(e.target.value)}
-              className="w-24 bg-surface border border-outline-variant/30 rounded-2xl px-3 py-3 text-sm text-on-surface text-center outline-none focus:border-primary font-bold"
+              className="w-28 bg-surface/50 border border-outline-variant/30 rounded-2xl px-3 py-3 text-sm text-on-surface text-center outline-none focus:border-[#20c997] transition-all font-bold backdrop-blur-sm"
             />
           </div>
 
@@ -2257,10 +2288,10 @@ const Pantry = () => {
               <select 
                 value={newItemCategory}
                 onChange={e => setNewItemCategory(e.target.value)}
-                className="w-full bg-surface border border-outline-variant/30 rounded-2xl px-4 py-3 text-sm text-on-surface outline-none focus:border-primary font-medium appearance-none cursor-pointer"
+                className="w-full bg-surface/50 border border-outline-variant/30 rounded-2xl px-4 py-3 text-sm text-on-surface outline-none focus:border-[#20c997] transition-all font-medium appearance-none cursor-pointer backdrop-blur-sm"
               >
                 {categories.map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
+                  <option key={cat} value={cat}>{getCategoryStyle(cat).emoji} {cat}</option>
                 ))}
               </select>
               <ChevronDown size={16} className="absolute right-4 top-4 text-outline pointer-events-none" />
@@ -2268,7 +2299,7 @@ const Pantry = () => {
             <button 
               type="submit"
               disabled={!newItemName.trim()}
-              className="bg-[#20c997] hover:bg-[#1db889] text-white font-bold text-sm px-6 rounded-2xl transition-all flex items-center justify-center gap-1 active:scale-95 disabled:opacity-50"
+              className="bg-gradient-to-r from-[#20c997] to-[#00f3ff] hover:brightness-110 text-white font-bold text-sm px-6 rounded-2xl transition-all flex items-center justify-center gap-1.5 active:scale-95 disabled:opacity-50 soft-shadow shadow-[#20c997]/20"
             >
               <Plus size={18} /> Adicionar
             </button>
@@ -2285,7 +2316,7 @@ const Pantry = () => {
             placeholder="Pesquisar na despensa..." 
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
-            className="w-full bg-surface-container-low border border-outline-variant/20 rounded-2xl pl-12 pr-4 py-3 text-sm text-on-surface placeholder:text-outline/60 outline-none focus:border-primary font-medium"
+            className="w-full bg-surface-container-low border border-outline-variant/15 rounded-2xl pl-12 pr-4 py-3 text-sm text-on-surface placeholder:text-outline/40 outline-none focus:border-[#20c997] transition-all font-medium"
           />
         </div>
 
@@ -2293,84 +2324,115 @@ const Pantry = () => {
         <div className="flex gap-2 overflow-x-auto no-scrollbar py-1">
           <button 
             onClick={() => setSelectedCategory('Todos')}
-            className={`px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap ${selectedCategory === 'Todos' ? 'bg-[#20c997] text-white shadow-md' : 'bg-surface-container-low border border-outline-variant/20 text-outline'}`}
+            className={`px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap border ${selectedCategory === 'Todos' ? 'bg-[#20c997] border-[#20c997] text-white shadow-lg shadow-[#20c997]/25' : 'bg-surface-container-low border-outline-variant/20 text-outline hover:border-outline-variant/40'}`}
           >
-            Todos
+            📦 Todos
           </button>
-          {categories.map(cat => (
-            <button 
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={`px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap ${selectedCategory === cat ? 'bg-[#20c997] text-white shadow-md' : 'bg-surface-container-low border border-outline-variant/20 text-outline'}`}
-            >
-              {cat}
-            </button>
-          ))}
+          {categories.map(cat => {
+            const style = getCategoryStyle(cat);
+            const isSelected = selectedCategory === cat;
+            return (
+              <button 
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className="px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap border"
+                style={{
+                  backgroundColor: isSelected ? style.color : '',
+                  borderColor: isSelected ? style.color : 'rgba(255, 255, 255, 0.08)',
+                  color: isSelected ? '#ffffff' : '#9ea3b0',
+                  boxShadow: isSelected ? `0 8px 20px -6px ${style.color}` : ''
+                }}
+              >
+                {style.emoji} {cat}
+              </button>
+            );
+          })}
         </div>
       </div>
 
       {/* Lista de Itens da Despensa */}
       <section className="grid grid-cols-1 sm:grid-cols-2 gap-3 space-y-0">
         {filteredItems.length > 0 ? (
-          filteredItems.map(item => (
-            <div 
-              key={item.id}
-              className="bg-surface-container-low p-4 rounded-3xl border border-outline-variant/10 flex items-center justify-between soft-shadow"
-            >
-              <div className="flex flex-col">
-                <span className="font-bold text-on-surface text-base">{item.name}</span>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-outline mt-0.5">{item.category}</span>
-              </div>
-
-              <div className="flex items-center gap-3">
-                {/* Transferir para lista de compras */}
-                <button 
-                  onClick={() => {
-                    if (lists.length === 0) {
-                      alert("Cria primeiro uma Lista de Compras para adicionares produtos!");
-                      return;
-                    }
-                    setTransferItem(item);
-                    setSelectedListId(lists[0]?.id || '');
-                    setTransferModalOpen(true);
-                  }}
-                  className="w-9 h-9 bg-primary/10 text-primary rounded-xl flex items-center justify-center hover:bg-primary/20 transition-colors active:scale-90"
-                  title="Adicionar à lista de compras"
-                >
-                  <ShoppingCart size={16} />
-                </button>
-
-                {/* Controlo de Quantidade */}
-                <div className="bg-surface border border-outline-variant/30 rounded-2xl flex items-center p-1 gap-1">
-                  <button 
-                    onClick={() => handleQuantityChange(item.id, 'dec')}
-                    className="w-7 h-7 rounded-xl flex items-center justify-center hover:bg-surface-container text-outline transition-colors"
+          filteredItems.map(item => {
+            const style = getCategoryStyle(item.category);
+            return (
+              <div 
+                key={item.id}
+                className="p-4 rounded-3xl border flex items-center justify-between transition-all hover:scale-[1.01]"
+                style={{
+                  background: `linear-gradient(135deg, ${style.color}14, ${style.color}03)`,
+                  borderColor: `${style.color}35`,
+                  boxShadow: `0 12px 30px -12px ${style.color}15, 0 4px 12px -5px rgba(0, 0, 0, 0.4)`
+                }}
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div 
+                    className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0"
+                    style={{ backgroundColor: `${style.color}20` }}
                   >
-                    <Minus size={14} />
-                  </button>
-                  <span className="px-2 text-xs font-extrabold text-on-surface min-w-[32px] text-center font-mono">
-                    {item.quantity}
-                  </span>
-                  <button 
-                    onClick={() => handleQuantityChange(item.id, 'inc')}
-                    className="w-7 h-7 rounded-xl flex items-center justify-center hover:bg-surface-container text-outline transition-colors"
-                  >
-                    <Plus size={14} />
-                  </button>
+                    {style.emoji}
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <span className="font-bold text-on-surface text-base truncate">{item.name}</span>
+                    <span 
+                      className="text-[10px] font-bold uppercase tracking-wider mt-0.5"
+                      style={{ color: style.color }}
+                    >
+                      {item.category}
+                    </span>
+                  </div>
                 </div>
 
-                <button 
-                  onClick={() => {
-                    setDeleteItemId(item.id);
-                    setDeleteModalOpen(true);
-                  }}
-                  className="w-9 h-9 bg-red-500/10 text-red-500 rounded-xl flex items-center justify-center hover:bg-red-500/20 transition-colors active:scale-90"
-                >
-                  <Trash2 size={16} />
-                </button>
+                <div className="flex items-center gap-3">
+                  {/* Transferir para lista de compras */}
+                  <button 
+                    onClick={() => {
+                      if (lists.length === 0) {
+                        alert("Cria primeiro uma Lista de Compras para adicionares produtos!");
+                        return;
+                      }
+                      setTransferItem(item);
+                      setSelectedListId(lists[0]?.id || '');
+                      setTransferModalOpen(true);
+                    }}
+                    className="w-9 h-9 bg-primary/10 text-primary rounded-xl flex items-center justify-center hover:bg-primary/20 transition-all active:scale-90"
+                    title="Adicionar à lista de compras"
+                  >
+                    <ShoppingCart size={16} />
+                  </button>
+
+                  {/* Controlo de Quantidade */}
+                  <div className="bg-black/30 border border-white/5 rounded-2xl flex items-center p-1 gap-1">
+                    <button 
+                      onClick={() => handleQuantityChange(item.id, 'dec')}
+                      className="w-7 h-7 rounded-xl flex items-center justify-center hover:bg-white/10 text-outline transition-colors"
+                    >
+                      <Minus size={14} />
+                    </button>
+                    <span className="px-2 text-xs font-extrabold text-on-surface min-w-[32px] text-center font-mono">
+                      {item.quantity}
+                    </span>
+                    <button 
+                      onClick={() => handleQuantityChange(item.id, 'inc')}
+                      className="w-7 h-7 rounded-xl flex items-center justify-center hover:bg-white/10 text-outline transition-colors"
+                    >
+                      <Plus size={14} />
+                    </button>
+                  </div>
+
+                  <button 
+                    onClick={() => {
+                      setDeleteItemId(item.id);
+                      setDeleteModalOpen(true);
+                    }}
+                    className="w-9 h-9 bg-red-500/10 text-red-500 rounded-xl flex items-center justify-center hover:bg-red-500/20 transition-all active:scale-90"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
               </div>
-            </div>
-          ))
+            );
+          })
         ) : (
           <div className="bg-surface-container-low p-10 rounded-[32px] border border-outline-variant/10 text-center flex flex-col items-center gap-3 soft-shadow">
             <Archive size={40} className="text-outline/40" />
