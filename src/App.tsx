@@ -95,7 +95,7 @@ const NavBar = ({ activeScreen, onScreenChange, isSupermarketMode }: { activeScr
   if (activeScreen === 'onboarding' || isSupermarketMode) return null;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 pb-5 pt-2.5 px-3 flex justify-between items-center z-50 bg-black border-t border-white/10 backdrop-blur-md">
+    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md sm:max-w-2xl md:max-w-3xl lg:max-w-4xl z-50 bg-black border-t border-white/10 backdrop-blur-md pb-5 pt-2.5 px-4 sm:px-8 flex justify-between items-center sm:rounded-t-3xl soft-shadow">
       {tabs.map((tab) => {
         const Icon = tab.icon;
         const isActive = activeScreen === tab.id;
@@ -482,7 +482,7 @@ const Dashboard = () => {
           <h3 className="text-2xl font-bold tracking-tight text-on-surface">Listas Ativas</h3>
           <button onClick={() => setCurrentScreen('lists')} className="text-sm font-bold text-primary active:opacity-70 transition-opacity">Ver Tudo</button>
         </div>
-        <div className="grid grid-cols-1 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {lists.length > 0 ? lists.map((list) => (
              <div 
               key={list.id} 
@@ -573,7 +573,7 @@ const ListsOverview = () => {
         </button>
       </header>
       
-      <div className="grid grid-cols-1 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {isCreatingList && (
            <div className="bg-surface-container-low p-6 rounded-[32px] soft-shadow border border-primary/50 flex flex-col gap-4">
              <div className="flex justify-between items-start">
@@ -2029,7 +2029,7 @@ const Pantry = () => {
       </div>
 
       {/* Lista de Itens da Despensa */}
-      <section className="space-y-3">
+      <section className="grid grid-cols-1 sm:grid-cols-2 gap-3 space-y-0">
         {filteredItems.length > 0 ? (
           filteredItems.map(item => (
             <div 
@@ -2157,7 +2157,7 @@ const RecipesOverview = () => {
           <p className="text-outline font-medium">Usa o Chef IA para gerar receitas incríveis e elas aparecerão aqui.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {recipes.map(recipe => (
              <div 
                key={recipe.id} 
@@ -2352,7 +2352,7 @@ export default function App() {
 
   return (
     <AppContext.Provider value={{ items, setItems, lists, setLists, pantryItems, setPantryItems, activeListId, setActiveListId, setCurrentScreen, familyMembers, setFamilyMembers, recipes, setRecipes, activeRecipeId, setActiveRecipeId, activities, setActivities }}>
-      <div className="min-h-screen max-w-lg mx-auto bg-surface relative transition-colors duration-300">
+      <div className="min-h-screen max-w-md sm:max-w-2xl md:max-w-3xl lg:max-w-4xl mx-auto bg-surface relative pb-24 transition-colors duration-300">
         <AnimatePresence mode="wait">
         {currentScreen === 'onboarding' && (
           <Onboarding key="onboarding" onStart={() => setCurrentScreen('home')} />
