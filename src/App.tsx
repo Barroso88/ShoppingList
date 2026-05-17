@@ -775,20 +775,23 @@ const Family = () => {
   };
 
   const confirmInvite = () => {
-    if (!inviteEmail.trim() || !inviteEmail.includes('@')) {
-      setIsInviting(false);
-      return;
-    }
-    const name = inviteEmail.split('@')[0];
-    const newMember: FamilyMember = {
-      id: Math.random().toString(36).substr(2, 9),
-      name: name.charAt(0).toUpperCase() + name.slice(1),
-      role: 'Membro',
-      avatar: `https://ui-avatars.com/api/?name=${name}&background=random`,
-      email: inviteEmail.trim()
-    };
-    setFamilyMembers(prev => [...prev, newMember]);
     setIsInviting(false);
+    
+    // Generate a random 6-character code
+    const inviteCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const magicLink = `${window.location.origin}/invite?code=${inviteCode}`;
+    
+    // Try to copy to clipboard
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(magicLink).then(() => {
+        alert(`Link Mágico Copiado!\n\nEnvia este link para a tua família pelo WhatsApp:\n${magicLink}`);
+      }).catch(() => {
+        alert(`Link de Convite Gerado:\n\n${magicLink}\n\n(Copia manualmente e envia)`);
+      });
+    } else {
+      alert(`Link de Convite Gerado:\n\n${magicLink}\n\n(Copia manualmente e envia)`);
+    }
+    
     setInviteEmail('');
   };
 
@@ -836,15 +839,15 @@ const Family = () => {
               <div className="flex-grow">
                 <input 
                   autoFocus
-                  type="email"
-                  placeholder="E-mail..."
+                  type="text"
+                  placeholder="Nome do Familiar..."
                   value={inviteEmail}
                   onChange={e => setInviteEmail(e.target.value)}
                   onBlur={confirmInvite}
                   onKeyDown={e => e.key === 'Enter' && confirmInvite()}
                   className="w-full bg-surface border-b-2 border-primary outline-none px-1 py-1 text-on-surface font-medium"
                 />
-                <p className="text-xs text-outline mt-1">Pressiona Enter para convidar</p>
+                <p className="text-xs text-outline mt-1">Pressiona Enter para gerar Link</p>
               </div>
             </div>
           </div>
