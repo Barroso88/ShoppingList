@@ -178,8 +178,9 @@ export async function generateRecipeWithAI(prompt: string) {
     const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
-      contents: `You are a helpful chef from Portugal. The user wants a recipe based on: "${prompt}".
-      CRITICAL: You must write EVERYTHING in strict European Portuguese (Português de Portugal). DO NOT use Brazilian terms (e.g. use 'frigorífico' instead of 'geladeira', 'natas' instead of 'creme de leite', 'fiambre' instead of 'presunto', etc.).
+      contents: `You are a versatile, friendly, and expert chef. The user wants a recipe based on: "${prompt}".
+      You support both Portuguese (Portugal) and Brazilian culinary traditions and language styles.
+      CRITICAL: Write the recipe in the dialect and culinary style matching the requested dish. If the user mentions Brazilian ingredients (e.g. 'mandioca', 'creme de leite', 'presunto') or typical Brazilian dishes, write EVERYTHING in Brazilian Portuguese (pt-BR). If the user mentions European Portuguese ingredients (e.g. 'natas', 'fiambre') or typical Portuguese dishes, write EVERYTHING in European Portuguese (pt-PT). Otherwise, default to a friendly European Portuguese (pt-PT) style but make it easily readable, inviting, and delicious for both Portuguese and Brazilian users.
       Return ONLY a JSON object with the following structure:
       {
         "title": "Recipe Name",
