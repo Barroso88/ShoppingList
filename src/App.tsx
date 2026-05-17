@@ -1,0 +1,1181 @@
+import { useState, useEffect, createContext, useContext } from 'react';
+import { GoogleGenAI } from '@google/genai';
+import { motion, AnimatePresence } from 'motion/react';
+import { 
+  Home, 
+  List, 
+  Users, 
+  Settings as SettingsIcon, 
+  Bell, 
+  Mic, 
+  Camera, 
+  Plus, 
+  ChevronRight, 
+  Search,
+  ShoppingCart,
+  Check,
+  MoreVertical,
+  LogOut,
+  Mail,
+  Shield,
+  Smartphone,
+  Globe,
+  Moon,
+  ExternalLink,
+  ChevronLeft,
+  Flame,
+  Dna,
+  Trash2,
+  Pencil,
+  Minus,
+  ChefHat,
+  BookOpen
+} from 'lucide-react';
+import { AppScreen, ShoppingList, FamilyMember, Activity, ShoppingItem, SavedRecipe } from './types.ts';
+import { MOCK_LISTS, MOCK_FAMILY, MOCK_ACTIVITY, MOCK_ITEMS } from './constants.ts';
+
+const THEMES = [
+  { id: 'light', name: 'Light (Default)' },
+  { id: 'dark-midnight', name: 'Midnight' },
+  { id: 'dark-dracula', name: 'Dracula' },
+  { id: 'dark-cyberpunk', name: 'Cyberpunk' },
+  { id: 'dark-synthwave', name: 'Synthwave' },
+  { id: 'dark-forest', name: 'Forest' },
+  { id: 'dark-ocean', name: 'Ocean' },
+  { id: 'dark-crimson', name: 'Crimson' },
+  { id: 'dark-gold', name: 'Gold' },
+  { id: 'dark-matrix', name: 'Matrix' },
+  { id: 'dark-solarized', name: 'Solarized' },
+];
+
+// --- App Context ---
+type AppContextType = {
+  items: ShoppingItem[];
+  setItems: React.Dispatch<React.SetStateAction<ShoppingItem[]>>;
+  lists: ShoppingList[];
+  setLists: React.Dispatch<React.SetStateAction<ShoppingList[]>>;
+  activeListId: string | null;
+  setActiveListId: React.Dispatch<React.SetStateAction<string | null>>;
+  setCurrentScreen: React.Dispatch<React.SetStateAction<AppScreen>>;
+  familyMembers: FamilyMember[];
+  setFamilyMembers: React.Dispatch<React.SetStateAction<FamilyMember[]>>;
+  recipes: SavedRecipe[];
+  setRecipes: React.Dispatch<React.SetStateAction<SavedRecipe[]>>;
+  activeRecipeId: string | null;
+  setActiveRecipeId: React.Dispatch<React.SetStateAction<string | null>>;
+};
+const AppContext = createContext<AppContextType | null>(null);
+const useAppContext = () => {
+  const ctx = useContext(AppContext);
+  if (!ctx) throw new Error("useAppContext must be used within AppProvider");
+  return ctx;
+};
+
+// --- Sub-components ---
+
+const NavBar = ({ activeScreen, onScreenChange }: { activeScreen: AppScreen, onScreenChange: (s: AppScreen) => void }) => {
+  const tabs: { id: AppScreen, label: string, icon: any }[] = [
+    { id: 'home', label: 'Início', icon: Home },
+    { id: 'lists', label: 'Listas', icon: List },
+    { id: 'recipes', label: 'Receitas', icon: ChefHat },
+    { id: 'family', label: 'Família', icon: Users },
+    { id: 'settings', label: 'Definições', icon: SettingsIcon },
+  ];
+
+  if (activeScreen === 'onboarding') return null;
+
+  return (
+    <nav className="fixed bottom-0 left-0 right-0 glass pb-6 pt-3 px-6 flex justify-between items-center z-50">
+      {tabs.map((tab) => {
+        const Icon = tab.icon;
+        const isActive = activeScreen === tab.id;
+        return (
+          <button 
+            key={tab.id}
+            onClick={() => onScreenChange(tab.id)}
+            className={`flex flex-col items-center gap-1 transition-all ${isActive ? 'text-primary scale-110' : 'text-outline hover:text-on-surface-variant'}`}
+          >
+            <div className={`p-2 rounded-2xl transition-all ${isActive ? 'bg-primary-container/20' : ''}`}>
+              <Icon size={24} strokeWidth={isActive ? 2.5 : 2} />
+            </div>
+            <span className="text-[10px] font-semibold uppercase tracking-wider">{tab.label}</span>
+          </button>
+        );
+      })}
+    </nav>
+  );
+};
+
+// --- Screens ---
+
+const Onboarding = ({ onStart }: { onStart: () => void }) => {
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
+
+  const handleGoogleLogin = () => {
+    setIsAuthenticating(true);
+    setTimeout(() => {
+      onStart();
+    }, 1500);
+  };
+
+  return (
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="min-h-screen bg-surface flex flex-col items-center justify-center p-8 overflow-hidden relative"
+    >
+      <div className="absolute top-20 left-[-10%] w-64 h-64 bg-primary/5 rounded-full blur-3xl opacity-50" />
+      <div className="absolute bottom-20 right-[-10%] w-64 h-64 bg-secondary/5 rounded-full blur-3xl opacity-50" />
+
+      <div className="flex flex-col items-center text-center space-y-8 z-10 w-full max-w-sm">
+        <motion.div 
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.2 }}
+          className="w-32 h-32 rounded-[32px] overflow-hidden shadow-2xl mb-4 flex items-center justify-center relative"
+        >
+          <img src="/icon.png" alt="Shopping List Logo" className="absolute inset-0 w-full h-full object-cover scale-[1.05]" />
+        </motion.div>
+
+        <div className="space-y-2">
+          <h1 className="text-5xl font-bold tracking-tighter text-on-surface">Shopping List</h1>
+          <p className="text-lg text-outline">Organize as compras da sua família com estilo</p>
+        </div>
+
+        <div className="w-full space-y-3">
+          <button className="w-full h-14 bg-[#2e3037] text-white rounded-full font-semibold flex items-center justify-center gap-3 active:scale-95 transition-all">
+            <Smartphone size={20} /> Continuar com Apple
+          </button>
+          <button 
+            onClick={handleGoogleLogin}
+            disabled={isAuthenticating}
+            className="w-full h-14 bg-surface-container-low border border-outline-variant text-on-surface rounded-full font-semibold flex items-center justify-center gap-3 active:scale-95 transition-all disabled:opacity-50"
+          >
+            {isAuthenticating ? (
+              <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <>
+                <svg className="w-5 h-5" viewBox="0 0 24 24">
+                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"></path>
+                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"></path>
+                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"></path>
+                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"></path>
+                </svg>
+                Continuar com Google
+              </>
+            )}
+          </button>
+        </div>
+
+        <div className="flex items-center w-full gap-4">
+          <div className="h-px bg-outline-variant/30 flex-grow" />
+          <span className="text-sm text-outline font-medium">ou</span>
+          <div className="h-px bg-outline-variant/30 flex-grow" />
+        </div>
+
+        <div className="w-full space-y-3">
+          <input 
+            type="email" 
+            placeholder="Endereço de e-mail" 
+            className="w-full h-14 px-6 rounded-2xl bg-surface-container-low border border-outline-variant/30 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-on-surface"
+          />
+          <button 
+            onClick={onStart}
+            className="w-full h-14 bg-primary text-white rounded-full font-semibold active:scale-95 transition-all shadow-lg shadow-primary/20"
+          >
+            Entrar com E-mail
+          </button>
+        </div>
+
+        <p className="text-sm text-outline">
+          Novo na família? <button className="text-primary font-bold hover:underline">Criar uma conta</button>
+        </p>
+
+        <div className="pt-8 flex gap-4 text-[10px] text-outline font-semibold uppercase tracking-widest">
+           <button>Privacidade</button>
+           <button>Termos</button>
+           <button>Ajuda</button>
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
+const AiRecipeGenerator = () => {
+  const { setItems, setLists, setRecipes } = useAppContext();
+  const [prompt, setPrompt] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [recipe, setRecipe] = useState<any>(null);
+
+  const generateRecipe = async () => {
+    if (!prompt.trim()) return;
+    setLoading(true);
+    try {
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: `You are a helpful chef from Portugal. The user wants a recipe based on: "${prompt}".
+        CRITICAL: You must write EVERYTHING in strict European Portuguese (Português de Portugal). DO NOT use Brazilian terms (e.g. use 'frigorífico' instead of 'geladeira', 'natas' instead of 'creme de leite', 'fiambre' instead of 'presunto', etc.).
+        Return ONLY a JSON object with the following structure:
+        {
+          "title": "Recipe Name",
+          "description": "Short description",
+          "emoji": "🍲",
+          "ingredients": [
+            { "name": "Ingredient 1", "quantity": "1 cup", "category": "Despensa" },
+            { "name": "Ingredient 2", "quantity": "2", "category": "Frutas e Legumes" }
+          ],
+          "instructions": [
+            "Passo 1...",
+            "Passo 2..."
+          ]
+        }`,
+        config: { responseMimeType: "application/json" }
+      });
+      if (response.text) {
+        let rawText = response.text.trim();
+        if (rawText.startsWith('```')) {
+          rawText = rawText.replace(/^```(?:json)?\n?/, '').replace(/```$/, '').trim();
+        }
+        const data = JSON.parse(rawText);
+        setRecipe(data);
+      }
+    } catch (e: any) {
+      console.error('Gemini Error:', e);
+      alert('Erro ao gerar receita: ' + (e.message || 'Erro desconhecido'));
+    }
+    setLoading(false);
+  };
+
+  const addIngredientsToList = () => {
+    if (!recipe) return;
+    const newListId = Math.random().toString(36).substr(2, 9);
+
+    const newItems: ShoppingItem[] = recipe.ingredients.map((ing: any) => ({
+      id: Math.random().toString(36).substr(2, 9),
+      listId: newListId,
+      name: ing.name,
+      quantity: ing.quantity,
+      category: ing.category || 'Outros',
+      checked: false
+    }));
+    
+    setItems(prev => [...newItems, ...prev]);
+    
+    const newList: ShoppingList = {
+      id: newListId,
+      name: recipe.title,
+      itemCount: newItems.length,
+      lastEdited: 'agora mesmo',
+      color: '#ff6b6b',
+      icon: 'Flame'
+    };
+    
+    setLists(prev => [newList, ...prev]);
+    
+    const savedRecipe: SavedRecipe = {
+      id: Math.random().toString(36).substr(2, 9),
+      title: recipe.title,
+      description: recipe.description,
+      emoji: recipe.emoji,
+      ingredients: recipe.ingredients,
+      instructions: recipe.instructions || []
+    };
+    setRecipes(prev => [savedRecipe, ...prev]);
+    
+    alert(`Ingredientes adicionados à nova lista "${recipe.title}" e receita guardada!`);
+    setRecipe(null);
+    setPrompt('');
+  };
+
+  return (
+    <section className="mb-10">
+      <h3 className="text-2xl font-bold tracking-tight text-on-surface mb-4">Chef IA 🧑‍🍳</h3>
+      {!recipe ? (
+        <div className="bg-surface-container-low p-6 rounded-[32px] soft-shadow border border-outline-variant/10">
+          <p className="text-on-surface font-medium mb-4">O que te apetece cozinhar hoje? Diz-me o que tens no frigorífico ou o tipo de prato.</p>
+          <div className="flex gap-2">
+            <input 
+              type="text" 
+              value={prompt}
+              onChange={e => setPrompt(e.target.value)}
+              placeholder="Ex: Jantar rápido com frango..."
+              className="flex-grow bg-surface border border-outline-variant/30 rounded-2xl px-4 py-3 text-sm text-on-surface outline-none focus:border-primary"
+              onKeyDown={e => e.key === 'Enter' && generateRecipe()}
+            />
+            <button 
+              onClick={generateRecipe}
+              disabled={loading}
+              className="w-12 h-12 bg-primary text-white flex items-center justify-center rounded-2xl flex-shrink-0 active:scale-95 disabled:opacity-50"
+            >
+              {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <ChevronRight />}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="relative rounded-[40px] overflow-hidden soft-shadow bg-surface-container-low border border-outline-variant/10">
+          <div className="h-48 relative overflow-hidden bg-gradient-to-br from-primary to-primary-container flex items-center justify-center">
+             <span className="text-8xl drop-shadow-2xl">{recipe.emoji}</span>
+             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+             <div className="absolute bottom-4 left-6 right-6 text-white">
+                <span className="bg-white/20 backdrop-blur-md px-3 py-1 border border-white/20 rounded-full text-[10px] font-bold uppercase tracking-widest mb-2 inline-block">Receita Gerada</span>
+                <h4 className="text-2xl font-bold leading-tight drop-shadow-md">{recipe.title}</h4>
+             </div>
+          </div>
+          <div className="p-6">
+            <p className="text-outline text-sm mb-6">{recipe.description}</p>
+            <h5 className="font-bold text-on-surface mb-3">Ingredientes:</h5>
+            <ul className="space-y-2 mb-6">
+              {recipe.ingredients.map((ing: any, idx: number) => (
+                <li key={idx} className="flex justify-between items-center text-sm bg-surface p-3 rounded-2xl border border-outline-variant/10">
+                  <span className="text-on-surface font-medium">{ing.name}</span>
+                  <span className="text-primary font-bold">{ing.quantity}</span>
+                </li>
+              ))}
+            </ul>
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setRecipe(null)}
+                className="h-14 px-6 bg-surface-container border border-outline-variant/20 text-on-surface rounded-full font-bold text-sm active:scale-95 transition-all"
+              >
+                Voltar
+              </button>
+              <button 
+                onClick={addIngredientsToList}
+                className="flex-grow h-14 bg-primary text-white rounded-full font-bold active:scale-95 transition-all text-sm flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
+              >
+                <ShoppingCart size={18} /> Adicionar à Lista
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+};
+
+const Dashboard = () => {
+  const { lists, setActiveListId, setCurrentScreen, familyMembers } = useAppContext();
+  return (
+    <div className="pb-32 px-6 pt-16">
+      <header className="flex justify-between items-center mb-8">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white soft-shadow">
+            <img src={familyMembers[0]?.avatar} alt="Profile" className="w-full h-full object-cover" />
+          </div>
+          <div>
+            <p className="text-sm text-outline">Bom dia,</p>
+            <h2 className="text-xl font-bold text-on-surface">{familyMembers[0]?.name.split(' ')[0]}</h2>
+          </div>
+        </div>
+        <button className="w-10 h-10 flex items-center justify-center rounded-full bg-surface-container-low text-primary relative">
+          <Bell size={20} />
+          <div className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-surface" />
+        </button>
+      </header>
+
+      <div className="relative mb-10">
+        <div className="flex items-center bg-surface-container-low rounded-full h-16 px-6 soft-shadow border border-outline-variant/20">
+          <Plus className="text-primary mr-4" size={24} />
+          <input 
+            type="text" 
+            placeholder="Adição rápida a qualquer lista..." 
+            className="flex-grow bg-transparent outline-none text-on-surface placeholder:text-outline-variant font-medium"
+          />
+          <div className="flex gap-3 text-outline">
+            <Mic size={20} />
+            <Camera size={20} />
+          </div>
+        </div>
+      </div>
+
+      <section className="mb-10">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-2xl font-bold tracking-tight text-on-surface">Listas Ativas</h3>
+          <button onClick={() => setCurrentScreen('lists')} className="text-sm font-bold text-primary active:opacity-70 transition-opacity">Ver Tudo</button>
+        </div>
+        <div className="grid grid-cols-1 gap-4">
+          {lists.length > 0 ? lists.map((list) => (
+             <div 
+              key={list.id} 
+              onClick={() => { setActiveListId(list.id); setCurrentScreen('list-detail'); }}
+              className="bg-surface-container-low p-6 rounded-[32px] soft-shadow border border-outline-variant/10 flex flex-col gap-4 group active:scale-[0.98] transition-all cursor-pointer"
+            >
+              <div className="flex justify-between items-start">
+                <div className={`p-4 rounded-2xl`} style={{ backgroundColor: `${list.color}40`, color: list.color }}>
+                   {list.icon === 'ShoppingCart' ? <ShoppingCart /> : list.icon === 'Flame' ? <Flame /> : <Dna />}
+                </div>
+                <span className="bg-surface-container-low px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-primary">
+                  {list.itemCount} itens
+                </span>
+              </div>
+              <div>
+                <h4 className="text-xl font-bold text-on-surface group-hover:text-primary transition-colors">{list.name}</h4>
+                <p className="text-sm text-outline">Última edição: {list.lastEdited}</p>
+              </div>
+            </div>
+          )) : (
+            <div className="bg-surface-container-low p-8 rounded-[32px] soft-shadow border border-outline-variant/10 text-center flex flex-col items-center gap-2">
+              <ShoppingCart size={32} className="text-outline/50" />
+              <p className="text-outline font-medium">Ainda não tens listas ativas.</p>
+            </div>
+          )}
+        </div>
+      </section>
+
+
+      <AiRecipeGenerator />
+    </div>
+  );
+};
+
+const ListsOverview = () => {
+  const { lists, setLists, setActiveListId, setCurrentScreen } = useAppContext();
+  const [isCreatingList, setIsCreatingList] = useState(false);
+  const [newListName, setNewListName] = useState('');
+
+  const confirmCreateList = () => {
+    if (!newListName.trim()) {
+      setIsCreatingList(false);
+      return;
+    }
+    const newList: ShoppingList = {
+      id: Math.random().toString(36).substr(2, 9),
+      name: newListName.trim(),
+      itemCount: 0,
+      lastEdited: 'agora mesmo',
+      color: '#primary',
+      icon: 'ShoppingCart'
+    };
+    setLists(prev => [newList, ...prev]);
+    setIsCreatingList(false);
+    setNewListName('');
+  };
+
+  const openList = (id: string) => {
+    setActiveListId(id);
+    setCurrentScreen('list-detail');
+  };
+
+  return (
+    <div className="pb-32 pt-16 px-6">
+      <header className="flex justify-between items-center mb-10">
+        <h2 className="text-3xl font-bold tracking-tight text-on-surface">As tuas Listas</h2>
+        <button onClick={() => setIsCreatingList(true)} className="w-12 h-12 bg-primary text-white rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-all">
+          <Plus size={24} />
+        </button>
+      </header>
+      
+      <div className="grid grid-cols-1 gap-4">
+        {isCreatingList && (
+           <div className="bg-surface-container-low p-6 rounded-[32px] soft-shadow border border-primary/50 flex flex-col gap-4">
+             <div className="flex justify-between items-start">
+               <div className="p-4 rounded-2xl bg-surface-container text-primary">
+                  <ShoppingCart />
+               </div>
+             </div>
+             <div>
+               <input 
+                 autoFocus
+                 type="text"
+                 placeholder="Nome da lista..."
+                 value={newListName}
+                 onChange={e => setNewListName(e.target.value)}
+                 onBlur={confirmCreateList}
+                 onKeyDown={e => e.key === 'Enter' && confirmCreateList()}
+                 className="text-xl font-bold bg-surface border-b-2 border-primary outline-none px-1 py-0.5 w-full text-on-surface"
+               />
+               <p className="text-sm text-outline mt-1">Pressiona Enter para guardar</p>
+             </div>
+           </div>
+        )}
+        {lists.map(list => (
+           <div 
+             key={list.id} 
+             onClick={() => openList(list.id)}
+             className="bg-surface-container-low p-6 rounded-[32px] soft-shadow border border-outline-variant/10 flex flex-col gap-4 group active:scale-[0.98] transition-all cursor-pointer"
+           >
+             <div className="flex justify-between items-start">
+               <div className="p-4 rounded-2xl bg-surface-container text-primary">
+                  {list.icon === 'ShoppingCart' ? <ShoppingCart /> : list.icon === 'Flame' ? <Flame /> : <Dna />}
+               </div>
+               <span className="bg-surface-container-low px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-primary">
+                 {list.itemCount} itens
+               </span>
+             </div>
+             <div>
+               <h4 className="text-xl font-bold text-on-surface group-hover:text-primary transition-colors">{list.name}</h4>
+               <p className="text-sm text-outline">Última edição: {list.lastEdited}</p>
+             </div>
+           </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const CORRECTIONS: Record<string, string> = {
+  "pao": "pão",
+  "maca": "maçã",
+  "limao": "limão",
+  "acucar": "açúcar",
+  "feijao": "feijão",
+  "cafe": "café",
+  "cha": "chá",
+  "hamburguer": "hambúrguer",
+  "agua": "água",
+  "grao": "grão",
+  "pimentao": "pimentão",
+  "salmao": "salmão",
+  "carvao": "carvão",
+  "acafrao": "açafrão",
+  "hortela": "hortelã",
+  "camarao": "camarão",
+  "brocolos": "brócolos",
+  "oleo": "óleo",
+  "pao de forma": "pão de forma",
+  "arroz": "arroz",
+  "esparguete": "esparguete",
+  "fuba": "fubá",
+  "abobora": "abóbora",
+  "amendoa": "amêndoa",
+  "roma": "romã",
+  "maracuja": "maracujá"
+};
+
+const formatProductName = (name: string) => {
+  if (!name) return "";
+  const lowerName = name.trim().toLowerCase();
+  
+  // First check if the entire string matches a dictionary entry (like "pao de forma")
+  let formatted = CORRECTIONS[lowerName] || lowerName;
+  
+  // Then split and check word by word in case of multiple words
+  if (formatted === lowerName) {
+    formatted = lowerName.split(' ').map(word => CORRECTIONS[word] || word).join(' ');
+  }
+  
+  // Capitalize first letter
+  return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+};
+
+const ListDetail = () => {
+  const { items, setItems, lists, setLists, activeListId, setCurrentScreen, familyMembers } = useAppContext();
+  const activeList = lists.find(l => l.id === activeListId);
+  const listItems = items.filter(item => item.listId === activeListId);
+  const categories = Array.from(new Set(listItems.map(item => item.category)));
+  const [newItemName, setNewItemName] = useState('');
+  
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [editNameValue, setEditNameValue] = useState('');
+
+  const toggleItem = (id: string) => {
+    setItems(prev => prev.map(item => item.id === id ? { ...item, checked: !item.checked } : item));
+  };
+
+  const deleteItem = (id: string) => {
+    if (confirm('Apagar este produto da lista?')) {
+      setItems(prev => prev.filter(item => item.id !== id));
+      setLists(prev => prev.map(l => l.id === activeListId ? { ...l, itemCount: Math.max(0, l.itemCount - 1), lastEdited: 'agora mesmo' } : l));
+    }
+  };
+
+  const deleteList = () => {
+    if (confirm(`Tens a certeza que queres apagar a lista "${activeList?.name}" e todos os seus produtos?`)) {
+      setItems(prev => prev.filter(item => item.listId !== activeListId));
+      setLists(prev => prev.filter(l => l.id !== activeListId));
+      setCurrentScreen('lists');
+      setActiveListId(null);
+    }
+  };
+
+  const startEdit = (id: string, currentName: string) => {
+    setEditingItemId(id);
+    setEditNameValue(currentName);
+  };
+
+  const saveEdit = (id: string) => {
+    if (editNameValue.trim() !== '') {
+      setItems(prev => prev.map(item => item.id === id ? { ...item, name: formatProductName(editNameValue) } : item));
+    }
+    setEditingItemId(null);
+  };
+
+  const adjustQuantity = (id: string, delta: number) => {
+    setItems(prev => prev.map(item => {
+      if (item.id !== id) return item;
+      const match = item.quantity.toString().match(/^(\d+(?:\.\d+)?)(.*)$/);
+      if (match) {
+        let num = parseFloat(match[1]);
+        const suffix = match[2];
+        num = Math.max(1, num + delta);
+        return { ...item, quantity: `${num}${suffix}` };
+      } else {
+        const parsed = parseInt(item.quantity) || 1;
+        return { ...item, quantity: String(Math.max(1, parsed + delta)) };
+      }
+    }));
+  };
+
+  const handleAddItem = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newItemName.trim() || !activeListId) return;
+    const newItem: ShoppingItem = {
+      id: Math.random().toString(36).substr(2, 9),
+      listId: activeListId,
+      name: formatProductName(newItemName),
+      quantity: '1',
+      category: 'Outros',
+      checked: false
+    };
+    setItems(prev => [newItem, ...prev]);
+    setLists(prev => prev.map(l => l.id === activeListId ? { ...l, itemCount: l.itemCount + 1, lastEdited: 'agora mesmo' } : l));
+    setNewItemName('');
+  };
+
+  if (!activeList) return null;
+
+  return (
+    <div className="pb-32 pt-16 px-6">
+      <header className="flex justify-between items-center mb-8">
+        <div className="flex items-center gap-4">
+          <button onClick={() => setCurrentScreen('lists')} className="w-10 h-10 bg-surface-container-low rounded-full flex items-center justify-center text-on-surface shadow-sm">
+            <ChevronLeft size={24} />
+          </button>
+          <h2 className="text-2xl font-bold text-on-surface">{activeList.name}</h2>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="flex -space-x-3">
+            {familyMembers.slice(0, 3).map((f) => (
+              <img key={f.id} src={f.avatar} className="w-10 h-10 rounded-full border-4 border-surface object-cover" />
+            ))}
+          </div>
+          <button onClick={deleteList} className="w-10 h-10 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center hover:bg-red-500/20 active:scale-90 transition-all shadow-sm">
+            <Trash2 size={18} />
+          </button>
+        </div>
+      </header>
+
+      <form onSubmit={handleAddItem} className="relative mb-8">
+        <div className="flex items-center bg-surface-container-low rounded-2xl h-14 px-5 border border-outline-variant/30 focus-within:border-primary focus-within:ring-2 ring-primary/20 transition-all">
+          <Plus size={20} className="text-primary mr-3" />
+          <input 
+            type="text" 
+            value={newItemName}
+            onChange={e => setNewItemName(e.target.value)}
+            placeholder="Adicionar produto à lista..." 
+            className="flex-grow bg-transparent outline-none text-on-surface placeholder:text-outline-variant font-medium"
+          />
+        </div>
+      </form>
+
+      <div className="space-y-10">
+        {categories.length > 0 ? categories.map((cat) => (
+          <section key={cat}>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className={`w-1.5 h-6 rounded-full ${cat === 'Frutas e Legumes' ? 'bg-green-500' : cat === 'Laticínios' ? 'bg-blue-500' : 'bg-amber-500'}`} />
+                <h3 className="font-bold text-on-surface/80 uppercase tracking-widest text-xs">{cat}</h3>
+              </div>
+              <span className="text-xs font-bold text-outline uppercase tracking-widest">{listItems.filter(i => i.category === cat).length} Itens</span>
+            </div>
+            <div className="space-y-4">
+              {listItems.filter(item => item.category === cat).map((item) => (
+                <div 
+                  key={item.id}
+                  className={`bg-surface-container-low p-5 rounded-3xl soft-shadow border border-outline-variant/10 flex items-start gap-4 transition-all ${item.checked ? 'opacity-50' : ''}`}
+                >
+                  <button 
+                    onClick={() => toggleItem(item.id)}
+                    className={`w-8 h-8 rounded-full border-2 mt-1 transition-all flex items-center justify-center flex-shrink-0 ${item.checked ? 'bg-primary border-primary text-white' : 'border-outline-variant/40'}`}
+                  >
+                    {item.checked && <Check size={16} strokeWidth={3} />}
+                  </button>
+                  <div className="flex-grow">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-grow mr-2">
+                        {editingItemId === item.id ? (
+                           <input 
+                             type="text"
+                             autoFocus
+                             value={editNameValue}
+                             onChange={e => setEditNameValue(e.target.value)}
+                             onBlur={() => saveEdit(item.id)}
+                             onKeyDown={e => e.key === 'Enter' && saveEdit(item.id)}
+                             className="text-lg font-bold leading-none mb-1 bg-surface border-b-2 border-primary outline-none px-1 py-0.5 w-full text-on-surface"
+                           />
+                        ) : (
+                           <h4 className={`text-lg font-bold leading-none mb-1 ${item.checked ? 'line-through' : ''}`}>{item.name}</h4>
+                        )}
+                        {item.isUrgent && <span className="text-[10px] font-bold text-red-600 uppercase tracking-widest">URGENTE</span>}
+                        {item.notes && <p className="text-xs text-outline font-medium italic mt-1">{item.notes}</p>}
+                      </div>
+                      <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                        <div className="flex items-center gap-1 bg-surface-container rounded-full p-1 border border-outline-variant/20">
+                          <button onClick={() => adjustQuantity(item.id, -1)} className="w-6 h-6 rounded-full flex items-center justify-center text-outline hover:text-primary active:bg-outline-variant/20">
+                            <Minus size={12} strokeWidth={3} />
+                          </button>
+                          <span className="text-[10px] font-bold text-on-surface px-1 min-w-[20px] text-center">
+                            {item.quantity}
+                          </span>
+                          <button onClick={() => adjustQuantity(item.id, 1)} className="w-6 h-6 rounded-full flex items-center justify-center text-outline hover:text-primary active:bg-outline-variant/20">
+                            <Plus size={12} strokeWidth={3} />
+                          </button>
+                        </div>
+                        <div className="flex items-center gap-1">
+                           {editingItemId === item.id ? (
+                             <button onClick={() => saveEdit(item.id)} className="p-2 text-white bg-primary active:scale-90 transition-all rounded-full">
+                                <Check size={16} />
+                             </button>
+                           ) : (
+                             <button onClick={() => startEdit(item.id, item.name)} className="p-2 text-green-500 bg-green-500/10 active:scale-90 transition-all rounded-full">
+                                <Pencil size={16} />
+                             </button>
+                           )}
+                           <button onClick={() => deleteItem(item.id)} className="p-2 text-red-500 bg-red-500/10 active:scale-90 transition-all rounded-full">
+                              <Trash2 size={16} />
+                           </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )) : (
+          <div className="text-center py-20 text-outline flex flex-col items-center">
+            <ShoppingCart size={48} className="mb-4 opacity-50" />
+            <p>A tua lista está vazia. Adiciona o primeiro item!</p>
+          </div>
+        )}
+      </div>
+
+      <button className="fixed bottom-32 right-8 w-16 h-16 bg-primary text-white rounded-[24px] soft-shadow flex items-center justify-center active:scale-90 transition-all z-40">
+        <Plus size={32} />
+      </button>
+    </div>
+  );
+};
+
+const Family = () => {
+  const { familyMembers, setFamilyMembers } = useAppContext();
+  const [isInviting, setIsInviting] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState('');
+  
+  const [shareSettings, setShareSettings] = useState([
+    { id: 'realtime', label: 'Presença em tempo real', sub: 'Mostrar quando outros estão a editar listas', active: true },
+    { id: 'smart', label: 'Sugestões Inteligentes', sub: 'Partilhar ideias de receitas baseadas no histórico', active: true },
+    { id: 'strict', label: 'Permissões Estritas', sub: 'Apenas Admins podem eliminar listas partilhadas', active: false },
+  ]);
+
+  const toggleShareSetting = (id: string) => {
+    setShareSettings(prev => prev.map(s => s.id === id ? { ...s, active: !s.active } : s));
+  };
+
+  const confirmInvite = () => {
+    if (!inviteEmail.trim() || !inviteEmail.includes('@')) {
+      setIsInviting(false);
+      return;
+    }
+    const name = inviteEmail.split('@')[0];
+    const newMember: FamilyMember = {
+      id: Math.random().toString(36).substr(2, 9),
+      name: name.charAt(0).toUpperCase() + name.slice(1),
+      role: 'Membro',
+      avatar: `https://ui-avatars.com/api/?name=${name}&background=random`,
+      email: inviteEmail.trim()
+    };
+    setFamilyMembers(prev => [...prev, newMember]);
+    setIsInviting(false);
+    setInviteEmail('');
+  };
+
+  return (
+    <div className="pb-32 pt-16 px-6">
+      <header className="flex justify-between items-center mb-10">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full overflow-hidden border border-outline-variant/30">
+            <img src={familyMembers[0]?.avatar} className="w-full h-full object-cover" />
+          </div>
+          <h2 className="text-xl font-bold text-on-surface">Família</h2>
+        </div>
+        <Bell size={24} className="text-primary" />
+      </header>
+
+      <section className="mb-10">
+        <h1 className="text-4xl font-bold tracking-tighter text-on-surface mb-2">A sua Família</h1>
+        <p className="text-outline font-medium">Gerir membros e preferências domésticas partilhadas.</p>
+      </section>
+
+      <div className="space-y-4 mb-8">
+        {familyMembers.length > 1 ? familyMembers.slice(1).map((member) => (
+          <div key={member.id} className="bg-surface-container-low p-5 rounded-[32px] soft-shadow border border-outline-variant/10 flex items-center justify-between group active:scale-[0.98] transition-all">
+            <div className="flex items-center gap-4">
+              <img src={member.avatar} className="w-14 h-14 rounded-full border-2 border-surface" />
+              <div>
+                <h4 className="font-bold text-on-surface">{member.name}</h4>
+                <p className={`text-sm font-bold ${member.role === 'Admin' ? 'text-primary' : 'text-outline'}`}>{member.role}</p>
+              </div>
+            </div>
+            <button className="text-outline">
+              <MoreVertical size={20} />
+            </button>
+          </div>
+        )) : (
+          <p className="text-outline text-sm text-center mb-6">Ainda não adicionaste nenhum membro à tua família.</p>
+        )}
+        
+        {isInviting ? (
+          <div className="bg-surface-container-low p-5 rounded-[32px] soft-shadow border border-primary flex items-center justify-between transition-all">
+            <div className="flex items-center gap-4 w-full">
+              <div className="w-14 h-14 rounded-full border-2 border-primary border-dashed flex items-center justify-center text-primary bg-primary/10">
+                 <Mail size={20} />
+              </div>
+              <div className="flex-grow">
+                <input 
+                  autoFocus
+                  type="email"
+                  placeholder="E-mail..."
+                  value={inviteEmail}
+                  onChange={e => setInviteEmail(e.target.value)}
+                  onBlur={confirmInvite}
+                  onKeyDown={e => e.key === 'Enter' && confirmInvite()}
+                  className="w-full bg-surface border-b-2 border-primary outline-none px-1 py-1 text-on-surface font-medium"
+                />
+                <p className="text-xs text-outline mt-1">Pressiona Enter para convidar</p>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <button onClick={() => setIsInviting(true)} className="w-full h-16 bg-primary text-white rounded-3xl font-bold flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-lg shadow-primary/20">
+            <Users size={20} /> Convidar Membro
+          </button>
+        )}
+      </div>
+
+      <section className="mb-10">
+        <h3 className="text-lg font-bold text-on-surface/80 mb-4 opacity-50">Atividade Recente</h3>
+        <div className="space-y-4">
+          <div className="bg-surface-container-low p-5 rounded-[32px] border border-outline-variant/30 flex items-center gap-4">
+            <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center text-green-600">
+               <List size={22} />
+            </div>
+            <div>
+              <h4 className="font-bold text-on-surface">Lista de Compras Sincronizada</h4>
+              <p className="text-sm text-outline">David atualizou 'Compras Semanais' há 15 min.</p>
+            </div>
+          </div>
+          <div className="bg-surface-container-low p-5 rounded-[32px] border border-outline-variant/30 flex items-center gap-4">
+            <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+               <Users size={22} />
+            </div>
+            <div>
+              <h4 className="font-bold text-on-surface">Convite Aceite</h4>
+              <p className="text-sm text-outline">Emma juntou-se ao grupo da família ontem.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h3 className="text-lg font-bold text-on-surface/80 mb-4 opacity-50">Definições de Partilha</h3>
+        <div className="bg-surface-container-low rounded-[32px] soft-shadow border border-outline-variant/10 divide-y divide-outline-variant/10">
+          {shareSettings.map((item) => (
+             <div key={item.id} className="p-6 flex items-center justify-between cursor-pointer group" onClick={() => toggleShareSetting(item.id)}>
+              <div>
+                <h4 className="font-bold text-on-surface">{item.label}</h4>
+                <p className="text-xs text-outline">{item.sub}</p>
+              </div>
+              <div className={`w-12 h-7 rounded-full p-1 transition-all ${item.active ? 'bg-primary' : 'bg-outline-variant group-hover:bg-outline'}`}>
+                <div className={`bg-white w-5 h-5 rounded-full shadow-sm transition-all ${item.active ? 'translate-x-5' : 'translate-x-0'}`} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+};
+
+const Settings = ({ theme, setTheme }: { theme: string, setTheme: (t: string) => void }) => {
+  const { familyMembers, setCurrentScreen } = useAppContext();
+  const user = familyMembers[0];
+
+  return (
+    <div className="pb-32 pt-16 px-6 bg-surface min-h-screen text-on-surface">
+      <header className="flex justify-between items-center mb-10">
+         <div className="w-10 h-10 rounded-full overflow-hidden bg-surface-container flex items-center justify-center">
+            <img src={user?.avatar} className="w-full h-full object-cover opacity-80" />
+         </div>
+         <h2 className="text-xl font-bold">Definições</h2>
+         <Bell size={24} className="text-primary" />
+      </header>
+
+      <div className="flex flex-col items-center mb-10">
+        <div className="relative mb-6">
+          <div className="w-32 h-32 rounded-full border-4 border-primary p-1 scale-110">
+             <img src={user?.avatar} className="w-full h-full rounded-full object-cover" />
+          </div>
+          <button className="absolute bottom-0 right-0 w-10 h-10 bg-primary rounded-full border-4 border-surface flex items-center justify-center text-white">
+            <Plus size={20} className="rotate-45" />
+          </button>
+        </div>
+        <h1 className="text-3xl font-bold tracking-tight mb-1 text-on-surface">{user?.name}</h1>
+        <p className="text-outline font-medium mb-4">{user?.email}</p>
+        <div className="bg-surface-container-low border border-outline-variant/30 px-4 py-2 rounded-full flex items-center gap-2">
+           <Shield size={14} className="text-primary" />
+           <span className="text-[10px] font-bold uppercase tracking-widest text-primary">Membro Premium</span>
+        </div>
+      </div>
+
+      <div className="space-y-10">
+        <section>
+          <h3 className="text-xs font-bold text-outline uppercase tracking-[0.2em] mb-4">Temas</h3>
+          <div className="bg-surface-container-low rounded-[32px] border border-outline-variant/20 p-6 flex flex-col gap-4">
+             <div className="flex items-center gap-4 mb-2">
+                <div className="w-12 h-12 rounded-2xl bg-surface-container flex items-center justify-center text-primary">
+                   <Moon size={20} />
+                </div>
+                <div>
+                   <h4 className="font-bold text-on-surface">Escolher Tema</h4>
+                   <p className="text-xs text-outline">Personaliza as cores da aplicação</p>
+                </div>
+             </div>
+             <div className="grid grid-cols-2 gap-2 mt-2">
+               {THEMES.map((t) => (
+                 <button
+                   key={t.id}
+                   onClick={() => setTheme(t.id)}
+                   className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all ${theme === t.id ? 'bg-primary text-white border-primary' : 'bg-surface-container border-outline-variant/20 text-on-surface hover:bg-surface-container-high'}`}
+                 >
+                   {t.name}
+                 </button>
+               ))}
+             </div>
+          </div>
+        </section>
+
+        <section>
+          <h3 className="text-xs font-bold text-outline uppercase tracking-[0.2em] mb-4">Conta</h3>
+          <div className="bg-surface-container-low rounded-[32px] border border-outline-variant/20 divide-y divide-outline-variant/20">
+             <div className="p-6 flex items-center justify-between group active:bg-surface-container transition-all cursor-pointer">
+                <div className="flex items-center gap-4">
+                   <div className="w-12 h-12 rounded-2xl bg-surface-container flex items-center justify-center text-primary">
+                      <Users size={20} />
+                   </div>
+                   <div>
+                      <h4 className="font-bold text-on-surface">Informação Pessoal</h4>
+                      <p className="text-xs text-outline">Atualize os detalhes do seu perfil</p>
+                   </div>
+                </div>
+                <ChevronRight size={20} className="text-outline-variant" />
+             </div>
+             <div className="p-6 flex items-center justify-between group active:bg-surface-container transition-all cursor-pointer">
+                <div className="flex items-center gap-4">
+                   <div className="w-12 h-12 rounded-2xl bg-surface-container flex items-center justify-center text-primary">
+                      <Shield size={20} />
+                   </div>
+                   <div>
+                      <h4 className="font-bold text-on-surface">Palavra-passe e Segurança</h4>
+                      <p className="text-xs text-outline">2FA, Registos de segurança</p>
+                   </div>
+                </div>
+                <ChevronRight size={20} className="text-outline-variant" />
+             </div>
+          </div>
+        </section>
+
+        <section>
+          <h3 className="text-xs font-bold text-outline uppercase tracking-[0.2em] mb-4">Grupo Familiar</h3>
+          <div className="bg-surface-container-low p-6 rounded-[32px] border border-outline-variant/20 flex items-center justify-between">
+             <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-surface-container flex items-center justify-center text-primary">
+                   <Users size={20} />
+                </div>
+                <div>
+                   <h4 className="font-bold text-on-surface">Gerir Grupo Familiar</h4>
+                   <p className="text-xs text-outline">{familyMembers.length} Membros Ativos</p>
+                </div>
+             </div>
+             <button onClick={() => setCurrentScreen('family')} className="bg-surface-container border border-outline-variant/30 px-4 py-2 rounded-xl text-xs font-bold text-on-surface hover:bg-surface-container-high transition-colors">
+                Gerir
+             </button>
+          </div>
+        </section>
+
+        <button className="w-full h-16 bg-surface-container-low border border-outline-variant/20 rounded-3xl flex items-center justify-center gap-3 text-red-500 font-bold active:scale-[0.98] transition-all">
+          <LogOut size={20} /> Sair
+        </button>
+
+        <p className="text-center text-[10px] font-bold text-outline-variant uppercase tracking-widest pb-10">
+          Shopping List v2.4.1 (Versão Estável)
+        </p>
+      </div>
+    </div>
+  );
+};
+
+const RecipesOverview = () => {
+  const { recipes, setActiveRecipeId, setCurrentScreen } = useAppContext();
+
+  const openRecipe = (id: string) => {
+    setActiveRecipeId(id);
+    setCurrentScreen('recipe-detail');
+  };
+
+  return (
+    <div className="pb-32 pt-16 px-6">
+      <header className="flex justify-between items-center mb-10">
+        <h2 className="text-3xl font-bold tracking-tight text-on-surface">As tuas Receitas</h2>
+      </header>
+
+      {recipes.length === 0 ? (
+        <div className="bg-surface-container-low p-8 rounded-[32px] soft-shadow border border-outline-variant/10 text-center flex flex-col items-center">
+          <BookOpen size={40} className="text-outline/50 mb-4" />
+          <h3 className="text-xl font-bold text-on-surface mb-2">Sem Receitas</h3>
+          <p className="text-outline font-medium">Usa o Chef IA para gerar receitas incríveis e elas aparecerão aqui.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-3">
+          {recipes.map(recipe => (
+             <div 
+               key={recipe.id} 
+               onClick={() => openRecipe(recipe.id)}
+               className="bg-surface-container-low p-4 rounded-3xl soft-shadow border border-outline-variant/10 flex items-center gap-4 group active:scale-[0.98] transition-all cursor-pointer"
+             >
+               <div className="w-14 h-14 rounded-2xl bg-surface-container flex items-center justify-center text-3xl flex-shrink-0">
+                  {recipe.emoji}
+               </div>
+               <h4 className="text-lg font-bold text-on-surface group-hover:text-primary transition-colors flex-grow truncate">{recipe.title}</h4>
+             </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const RecipeDetail = () => {
+  const { recipes, activeRecipeId, setCurrentScreen } = useAppContext();
+  const recipe = recipes.find(r => r.id === activeRecipeId);
+
+  if (!recipe) return null;
+
+  return (
+    <div className="pb-32 pt-16 px-6">
+      <header className="flex items-center gap-4 mb-8">
+        <button onClick={() => setCurrentScreen('recipes')} className="w-10 h-10 bg-surface-container-low rounded-full flex items-center justify-center text-on-surface shadow-sm">
+          <ChevronLeft size={24} />
+        </button>
+        <h2 className="text-2xl font-bold text-on-surface flex-grow truncate">{recipe.title}</h2>
+        <span className="text-2xl">{recipe.emoji}</span>
+      </header>
+
+      <section className="mb-8">
+        <p className="text-outline font-medium text-lg">{recipe.description}</p>
+      </section>
+
+      <section className="mb-10">
+        <h3 className="text-xl font-bold text-on-surface mb-4">Ingredientes</h3>
+        <div className="bg-surface-container-low rounded-3xl p-5 border border-outline-variant/10 flex flex-col gap-3">
+          {recipe.ingredients.map((ing, idx) => (
+            <div key={idx} className="flex justify-between items-center border-b border-outline-variant/10 pb-3 last:border-0 last:pb-0">
+               <span className="font-medium text-on-surface">{ing.name}</span>
+               <span className="text-sm font-bold bg-surface px-3 py-1 rounded-full text-primary">{ing.quantity}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section>
+        <h3 className="text-xl font-bold text-on-surface mb-4">Preparação</h3>
+        <div className="space-y-4">
+          {recipe.instructions && recipe.instructions.length > 0 ? recipe.instructions.map((step, idx) => (
+             <div key={idx} className="bg-surface-container-low p-5 rounded-[24px] border border-outline-variant/10 flex gap-4">
+                <div className="w-8 h-8 rounded-full bg-primary text-white font-bold flex items-center justify-center flex-shrink-0">
+                  {idx + 1}
+                </div>
+                <p className="text-on-surface font-medium leading-relaxed">{step}</p>
+             </div>
+          )) : (
+             <p className="text-outline italic">Instruções não disponíveis para esta receita.</p>
+          )}
+        </div>
+      </section>
+    </div>
+  );
+};
+
+export default function App() {
+  const [currentScreen, setCurrentScreen] = useState<AppScreen>('onboarding');
+  const [theme, setTheme] = useState<string>('dark-midnight');
+  const [items, setItems] = useState<ShoppingItem[]>(MOCK_ITEMS.map(i => ({...i, listId: 'l1'})));
+  const [lists, setLists] = useState<ShoppingList[]>(MOCK_LISTS);
+  const [recipes, setRecipes] = useState<SavedRecipe[]>([]);
+  const [activeRecipeId, setActiveRecipeId] = useState<string | null>(null);
+  const [activeListId, setActiveListId] = useState<string | null>(null);
+  const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([
+    {
+      id: 'f1',
+      name: 'Alex Richardson',
+      role: 'Admin',
+      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=300',
+      email: 'alex.richardson@shoppinglist.app'
+    }
+  ]);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
+
+  return (
+    <AppContext.Provider value={{ items, setItems, lists, setLists, activeListId, setActiveListId, setCurrentScreen, familyMembers, setFamilyMembers, recipes, setRecipes, activeRecipeId, setActiveRecipeId }}>
+      <div className="min-h-screen max-w-lg mx-auto bg-surface relative transition-colors duration-300">
+        <AnimatePresence mode="wait">
+        {currentScreen === 'onboarding' && (
+          <Onboarding key="onboarding" onStart={() => setCurrentScreen('home')} />
+        )}
+        {currentScreen === 'home' && (
+          <motion.div key="home" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+            <Dashboard />
+          </motion.div>
+        )}
+        {currentScreen === 'lists' && (
+          <motion.div key="lists" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+            <ListsOverview />
+          </motion.div>
+        )}
+        {currentScreen === 'list-detail' && (
+          <motion.div key="list" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+            <ListDetail />
+          </motion.div>
+        )}
+        {currentScreen === 'recipes' && (
+          <motion.div key="recipes" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+            <RecipesOverview />
+          </motion.div>
+        )}
+        {currentScreen === 'recipe-detail' && (
+          <motion.div key="recipe-detail" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+            <RecipeDetail />
+          </motion.div>
+        )}
+        {currentScreen === 'family' && (
+          <motion.div key="family" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+            <Family />
+          </motion.div>
+        )}
+        {currentScreen === 'settings' && (
+          <motion.div key="settings" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+            <Settings theme={theme} setTheme={setTheme} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <NavBar activeScreen={currentScreen} onScreenChange={setCurrentScreen} />
+      </div>
+    </AppContext.Provider>
+  );
+}

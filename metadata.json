@@ -1,0 +1,10 @@
+{
+  "name": "Kinship",
+  "description": "A premium, collaborative family shopping and household organizer designed for modern homes.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
