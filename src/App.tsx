@@ -215,8 +215,11 @@ const AiRecipeGenerator = () => {
     if (!prompt.trim()) return;
     setLoading(true);
     try {
-      const data = await generateRecipeWithAI(prompt);
-      setRecipe(data);
+      const response = await generateRecipeWithAI(prompt);
+      if (response.error) {
+        throw new Error(response.error);
+      }
+      setRecipe(response.data);
     } catch (e: any) {
       console.error('Gemini Error:', e);
       alert('Erro ao gerar receita: ' + (e.message || 'Erro desconhecido'));

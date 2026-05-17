@@ -112,38 +112,43 @@ export async function deleteRecipe(id: string) {
 import { GoogleGenAI } from '@google/genai';
 
 export async function generateRecipeWithAI(prompt: string) {
-  if (!process.env.GEMINI_API_KEY) {
-    throw new Error('Chave de API do Gemini não configurada no servidor.');
+  try {
+    if (!process.env.GEMINI_API_KEY) {
+      return { error: 'Chave de API do Gemini não configurada no servidor (GEMINI_API_KEY).' };
+    }
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: `You are a helpful chef from Portugal. The user wants a recipe based on: "${prompt}".
+      CRITICAL: You must write EVERYTHING in strict European Portuguese (Português de Portugal). DO NOT use Brazilian terms (e.g. use 'frigorífico' instead of 'geladeira', 'natas' instead of 'creme de leite', 'fiambre' instead of 'presunto', etc.).
+      Return ONLY a JSON object with the following structure:
+      {
+        "title": "Recipe Name",
+        "description": "Short description",
+        "emoji": "🍲",
+        "ingredients": [
+          { "name": "Ingredient 1", "quantity": "1 cup", "category": "Despensa" },
+          { "name": "Ingredient 2", "quantity": "2", "category": "Frutas e Legumes" }
+        ],
+        "instructions": [
+          "Passo 1...",
+          "Passo 2..."
+        ]
+      }`,
+      config: { responseMimeType: "application/json" }
+    });
+    
+    if (!response.text) {
+      return { error: 'A IA não devolveu nenhum texto.' };
+    }
+    
+    let rawText = response.text.trim();
+    if (rawText.startsWith('```')) {
+      rawText = rawText.replace(/^```(?:json)?\n?/, '').replace(/```$/, '').trim();
+    }
+    return { success: true, data: JSON.parse(rawText) };
+  } catch (error: any) {
+    console.error("Gemini Server Error:", error);
+    return { error: error.message || 'Erro interno ao gerar receita.' };
   }
-  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
-    contents: `You are a helpful chef from Portugal. The user wants a recipe based on: "${prompt}".
-    CRITICAL: You must write EVERYTHING in strict European Portuguese (Português de Portugal). DO NOT use Brazilian terms (e.g. use 'frigorífico' instead of 'geladeira', 'natas' instead of 'creme de leite', 'fiambre' instead of 'presunto', etc.).
-    Return ONLY a JSON object with the following structure:
-    {
-      "title": "Recipe Name",
-      "description": "Short description",
-      "emoji": "🍲",
-      "ingredients": [
-        { "name": "Ingredient 1", "quantity": "1 cup", "category": "Despensa" },
-        { "name": "Ingredient 2", "quantity": "2", "category": "Frutas e Legumes" }
-      ],
-      "instructions": [
-        "Passo 1...",
-        "Passo 2..."
-      ]
-    }`,
-    config: { responseMimeType: "application/json" }
-  });
-  
-  if (!response.text) {
-    throw new Error('A IA não devolveu nenhum texto.');
-  }
-  
-  let rawText = response.text.trim();
-  if (rawText.startsWith('```')) {
-    rawText = rawText.replace(/^```(?:json)?\n?/, '').replace(/```$/, '').trim();
-  }
-  return JSON.parse(rawText);
 }
