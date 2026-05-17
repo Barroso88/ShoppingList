@@ -2,7 +2,7 @@
 import { useState, useEffect, createContext, useContext } from 'react';
 import { signIn, signOut, useSession } from 'next-auth/react';
 import { GoogleGenAI } from '@google/genai';
-import { getLists, createList as dbCreateList, deleteList as dbDeleteList, addItem as dbAddItem, toggleItemChecked as dbToggleItemChecked, updateItemQuantity as dbUpdateItemQuantity, updateItemName as dbUpdateItemName, deleteItem as dbDeleteItem } from '@/app/actions';
+import { getLists, createList as dbCreateList, deleteList as dbDeleteList, addItem as dbAddItem, toggleItemChecked as dbToggleItemChecked, updateItemQuantity as dbUpdateItemQuantity, updateItemName as dbUpdateItemName, deleteItem as dbDeleteItem, getRecipes, saveRecipe as dbSaveRecipe, deleteRecipe as dbDeleteRecipe, getActivities, logActivity } from '@/app/actions';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Home, 
@@ -285,6 +285,23 @@ const AiRecipeGenerator = () => {
     };
     setRecipes(prev => [savedRecipe, ...prev]);
     
+    // Save to DB in background
+    Promise.all([
+      dbCreateList(newList.name, newList.color, newList.icon).then(async dbList => {
+        const promises = newItems.map(item => dbAddItem(dbList.id, item.name, item.category, item.quantity));
+        await Promise.all(promises);
+        setLists(prev => prev.map(l => l.id === newList.id ? { ...l, id: dbList.id } : l));
+        setItems(prev => prev.map(i => i.listId === newList.id ? { ...i, listId: dbList.id } : i));
+      }),
+      dbSaveRecipe(savedRecipe.title, savedRecipe.description, savedRecipe.emoji, savedRecipe.ingredients, savedRecipe.instructions).then(dbRecipe => {
+        setRecipes(prev => prev.map(r => r.id === savedRecipe.id ? { ...r, id: dbRecipe.id } : r));
+      })
+    ]).catch(() => console.error("Falha ao gravar receita na DB"));
+    
+    if (session?.user?.name) {
+      logActivity('Criou Receita com IA', recipe.title, session.user.name);
+    }
+    
     alert(`Ingredientes adicionados à nova lista "${recipe.title}" e receita guardada!`);
     setRecipe(null);
     setPrompt('');
@@ -455,6 +472,9 @@ const ListsOverview = () => {
     setNewListName('');
     
     try {
+      if (session?.user?.name) {
+        logActivity('Criou uma Lista', newList.name, session.user.name);
+      }
       const dbList = await dbCreateList(newList.name, newList.color, newList.icon);
       setLists(prev => prev.map(l => l.id === tempId ? { ...l, id: dbList.id } : l));
     } catch (e) {
@@ -906,24 +926,19 @@ const Family = () => {
       <section className="mb-10">
         <h3 className="text-lg font-bold text-on-surface/80 mb-4 opacity-50">Atividade Recente</h3>
         <div className="space-y-4">
-          <div className="bg-surface-container-low p-5 rounded-[32px] border border-outline-variant/30 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center text-green-600">
-               <List size={22} />
+          {activities.length > 0 ? activities.map(act => (
+            <div key={act.id} className="bg-surface-container-low p-5 rounded-[32px] border border-outline-variant/30 flex items-center gap-4">
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                 <List size={22} />
+              </div>
+              <div>
+                <h4 className="font-bold text-on-surface">{act.action}</h4>
+                <p className="text-sm text-outline">{act.userName} • {act.target}</p>
+              </div>
             </div>
-            <div>
-              <h4 className="font-bold text-on-surface">Lista de Compras Sincronizada</h4>
-              <p className="text-sm text-outline">David atualizou 'Compras Semanais' há 15 min.</p>
-            </div>
-          </div>
-          <div className="bg-surface-container-low p-5 rounded-[32px] border border-outline-variant/30 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
-               <Users size={22} />
-            </div>
-            <div>
-              <h4 className="font-bold text-on-surface">Convite Aceite</h4>
-              <p className="text-sm text-outline">Emma juntou-se ao grupo da família ontem.</p>
-            </div>
-          </div>
+          )) : (
+            <p className="text-outline text-sm text-center mb-6">Ainda não há atividade recente.</p>
+          )}
         </div>
       </section>
 
@@ -1206,9 +1221,16 @@ export default function App() {
         setItems(allItems);
         setIsLoadingDB(false);
       });
+      getRecipes().then(dbRecipes => {
+        setRecipes(dbRecipes as unknown as SavedRecipe[]);
+      });
+      getActivities().then(dbActivities => {
+        setActivities(dbActivities);
+      });
     }
   }, [status]);
   const [recipes, setRecipes] = useState<SavedRecipe[]>([]);
+  const [activities, setActivities] = useState<Activity[]>([]);
   const [activeRecipeId, setActiveRecipeId] = useState<string | null>(null);
   const [activeListId, setActiveListId] = useState<string | null>(null);
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);

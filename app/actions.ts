@@ -85,3 +85,25 @@ export async function logActivity(action: string, target: string, userName: stri
   });
   revalidatePath("/");
 }
+
+// --- Recipes ---
+export async function getRecipes() {
+  return prisma.savedRecipe.findMany({
+    orderBy: { createdAt: 'desc' }
+  });
+}
+
+export async function saveRecipe(title: string, description: string, emoji: string, ingredients: any, instructions: any) {
+  const recipe = await prisma.savedRecipe.create({
+    data: { title, description, emoji, ingredients, instructions }
+  });
+  revalidatePath("/");
+  return recipe;
+}
+
+export async function deleteRecipe(id: string) {
+  await prisma.savedRecipe.delete({
+    where: { id }
+  });
+  revalidatePath("/");
+}
