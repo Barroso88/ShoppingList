@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  # O nosso Frontend React
+  shoplist-frontend:
+    build: .
+    container_name: shoplist_frontend
+    ports:
+      - "3000:80" # Acede via http://IP_DO_UNRAID:3000
+    restart: unless-stopped
+    depends_on:
+      - shoplist-backend
+
+  # O Backend (Exemplo: Node.js/Express) que ainda temos de construir
+  shoplist-backend:
+    image: node:20-alpine
+    container_name: shoplist_backend
+    working_dir: /app
+    # command: npm run start
+    # Volumes, ports, etc. a serem definidos na próxima fase
+    ports:
+      - "4000:4000"
+    environment:
+      - DATABASE_URL=postgresql://shoplist_user:shoplist_password@shoplist-db:5432/shoplist_db
+    restart: unless-stopped
+    depends_on:
+      - shoplist-db
+
+  # A base de dados PostgreSQL
+  shoplist-db:
+    image: postgres:15-alpine
+    container_name: shoplist_db
+    environment:
+      POSTGRES_USER: shoplist_user
+      POSTGRES_PASSWORD: shoplist_password
+      POSTGRES_DB: shoplist_db
+    ports:
+      - "5432:5432" # Podes mapear para outra porta se o Unraid já estiver a usar a 5432
+    volumes:
+      - shoplist_pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  shoplist_pgdata:
