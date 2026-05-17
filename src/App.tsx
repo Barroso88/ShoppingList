@@ -2358,50 +2358,34 @@ const Pantry = () => {
             return (
               <div 
                 key={item.id}
-                className="p-4 rounded-3xl border flex items-center justify-between transition-all hover:scale-[1.01]"
+                className="p-4 rounded-3xl border flex flex-col transition-all hover:scale-[1.01]"
                 style={{
                   background: `linear-gradient(135deg, ${style.color}14, ${style.color}03)`,
                   borderColor: `${style.color}35`,
                   boxShadow: `0 12px 30px -12px ${style.color}15, 0 4px 12px -5px rgba(0, 0, 0, 0.4)`
                 }}
               >
-                <div className="flex items-center gap-3 min-w-0">
-                  <div 
-                    className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0"
-                    style={{ backgroundColor: `${style.color}20` }}
+                {/* Top Row: Name and Category Badge */}
+                <div className="flex justify-between items-start gap-3 min-w-0">
+                  <span className="font-bold text-on-surface text-base min-w-0 truncate pr-1" title={item.name}>
+                    {item.name}
+                  </span>
+                  <span 
+                    className="px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider border flex-shrink-0 flex items-center gap-1"
+                    style={{ 
+                      backgroundColor: `${style.color}15`, 
+                      color: style.color, 
+                      borderColor: `${style.color}25` 
+                    }}
                   >
-                    {style.emoji}
-                  </div>
-                  <div className="flex flex-col min-w-0">
-                    <span className="font-bold text-on-surface text-base truncate">{item.name}</span>
-                    <span 
-                      className="text-[10px] font-bold uppercase tracking-wider mt-0.5"
-                      style={{ color: style.color }}
-                    >
-                      {item.category}
-                    </span>
-                  </div>
+                    <span>{style.emoji}</span>
+                    <span>{item.category}</span>
+                  </span>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  {/* Transferir para lista de compras */}
-                  <button 
-                    onClick={() => {
-                      if (lists.length === 0) {
-                        alert("Cria primeiro uma Lista de Compras para adicionares produtos!");
-                        return;
-                      }
-                      setTransferItem(item);
-                      setSelectedListId(lists[0]?.id || '');
-                      setTransferModalOpen(true);
-                    }}
-                    className="w-9 h-9 bg-primary/10 text-primary rounded-xl flex items-center justify-center hover:bg-primary/20 transition-all active:scale-90"
-                    title="Adicionar à lista de compras"
-                  >
-                    <ShoppingCart size={16} />
-                  </button>
-
-                  {/* Controlo de Quantidade */}
+                {/* Bottom Row: Quantity controls and Action buttons */}
+                <div className="flex items-center justify-between mt-4 pt-3 border-t border-white/5">
+                  {/* Quantity control pill */}
                   <div className="bg-black/30 border border-white/5 rounded-2xl flex items-center p-1 gap-1">
                     <button 
                       onClick={() => handleQuantityChange(item.id, 'dec')}
@@ -2420,15 +2404,36 @@ const Pantry = () => {
                     </button>
                   </div>
 
-                  <button 
-                    onClick={() => {
-                      setDeleteItemId(item.id);
-                      setDeleteModalOpen(true);
-                    }}
-                    className="w-9 h-9 bg-red-500/10 text-red-500 rounded-xl flex items-center justify-center hover:bg-red-500/20 transition-all active:scale-90"
-                  >
-                    <Trash2 size={16} />
-                  </button>
+                  {/* Actions (Transfer & Delete) */}
+                  <div className="flex items-center gap-2">
+                    {/* Transfer to shopping list */}
+                    <button 
+                      onClick={() => {
+                        if (lists.length === 0) {
+                          alert("Cria primeiro uma Lista de Compras para adicionares produtos!");
+                          return;
+                        }
+                        setTransferItem(item);
+                        setSelectedListId(lists[0]?.id || '');
+                        setTransferModalOpen(true);
+                      }}
+                      className="w-9 h-9 bg-primary/10 text-primary rounded-xl flex items-center justify-center hover:bg-primary/20 transition-all active:scale-90"
+                      title="Adicionar à lista de compras"
+                    >
+                      <ShoppingCart size={16} />
+                    </button>
+
+                    {/* Delete item */}
+                    <button 
+                      onClick={() => {
+                        setDeleteItemId(item.id);
+                        setDeleteModalOpen(true);
+                      }}
+                      className="w-9 h-9 bg-red-500/10 text-red-500 rounded-xl flex items-center justify-center hover:bg-red-500/20 transition-all active:scale-90"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </div>
               </div>
             );
