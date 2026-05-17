@@ -1,5 +1,6 @@
 "use server";
 
+// Refreshing typings for database schema
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth/next";
