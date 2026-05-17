@@ -887,8 +887,10 @@ const ListDetail = ({ isSupermarketMode, setIsSupermarketMode }: { isSupermarket
   const { items, setItems, lists, setLists, pantryItems, setPantryItems, activeListId, setActiveListId, setCurrentScreen, familyMembers } = useAppContext();
   const { data: session } = useSession();
   const activeList = lists.find(l => l.id === activeListId);
-  const listItems = items.filter(item => item.listId === activeListId);
-  const categories = Array.from(new Set(listItems.map(item => item.category)));
+  const listItems = items
+    .filter(item => item.listId === activeListId)
+    .sort((a, b) => a.name.localeCompare(b.name));
+  const categories = Array.from(new Set(listItems.map(item => item.category))).sort((a, b) => a.localeCompare(b));
   const [newItemName, setNewItemName] = useState('');
 
   const totalItemsCount = listItems.length;
@@ -897,7 +899,7 @@ const ListDetail = ({ isSupermarketMode, setIsSupermarketMode }: { isSupermarket
   
   const uncheckedItems = listItems.filter(item => !item.checked);
   const checkedItems = listItems.filter(item => item.checked);
-  const uncheckedCategories = Array.from(new Set(uncheckedItems.map(item => item.category)));
+  const uncheckedCategories = Array.from(new Set(uncheckedItems.map(item => item.category))).sort((a, b) => a.localeCompare(b));
   
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [editNameValue, setEditNameValue] = useState('');
@@ -2301,7 +2303,7 @@ const Pantry = () => {
     const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'Todos' || item.category === selectedCategory;
     return matchesSearch && matchesCategory;
-  });
+  }).sort((a, b) => a.name.localeCompare(b.name));
 
   return (
     <div className="pb-32 pt-16 px-6 bg-surface min-h-screen text-on-surface">
@@ -2772,7 +2774,7 @@ const RecipesOverview = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {recipes.map(recipe => {
+          {[...recipes].sort((a, b) => a.title.localeCompare(b.title)).map(recipe => {
             const recipeColor = getRecipeColor(recipe.title);
             return (
               <div 
