@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, createContext, useContext } from 'react';
+import { signIn, useSession } from 'next-auth/react';
 import { GoogleGenAI } from '@google/genai';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -114,9 +115,7 @@ const Onboarding = ({ onStart }: { onStart: () => void }) => {
 
   const handleGoogleLogin = () => {
     setIsAuthenticating(true);
-    setTimeout(() => {
-      onStart();
-    }, 1500);
+    signIn('google', { callbackUrl: '/' });
   };
 
   return (
@@ -1110,7 +1109,16 @@ const RecipeDetail = () => {
 };
 
 export default function App() {
+  const { status, data: session } = useSession();
   const [currentScreen, setCurrentScreen] = useState<AppScreen>('onboarding');
+  
+  useEffect(() => {
+    if (status === 'authenticated') {
+      setCurrentScreen('home');
+    } else if (status === 'unauthenticated') {
+      setCurrentScreen('onboarding');
+    }
+  }, [status]);
   const [theme, setTheme] = useState<string>('dark-midnight');
   const [items, setItems] = useState<ShoppingItem[]>(MOCK_ITEMS.map(i => ({...i, listId: 'l1'})));
   const [lists, setLists] = useState<ShoppingList[]>(MOCK_LISTS);

@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import './globals.css';
 
+import { Providers } from './providers';
+
 export const metadata: Metadata = {
   title: 'Shopping List',
   description: 'Organize as compras da sua família com estilo',
@@ -16,7 +18,9 @@ export default function RootLayout({
       <head>
         <link rel="icon" href="/icon.png" />
       </head>
-      <body>{children}</body>
+      <body>
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }
