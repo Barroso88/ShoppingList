@@ -7,6 +7,9 @@ const nextConfig: NextConfig = {
   },
   typescript: {
     ignoreBuildErrors: true,
+  },
+  serverActions: {
+    allowedOrigins: ['shopping.barrosoportal.com', 'localhost:3056', 'localhost:3000'],
   }
 };
 
