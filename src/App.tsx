@@ -571,26 +571,36 @@ const ListsOverview = () => {
              </div>
            </div>
         )}
-        {lists.map(list => (
-           <div 
-             key={list.id} 
-             onClick={() => openList(list.id)}
-             className="bg-surface-container-low p-6 rounded-[32px] soft-shadow border border-outline-variant/10 flex flex-col gap-4 group active:scale-[0.98] transition-all cursor-pointer"
-           >
-             <div className="flex justify-between items-start">
-               <div className="p-4 rounded-2xl bg-surface-container text-primary">
-                  {list.icon === 'ShoppingCart' ? <ShoppingCart /> : list.icon === 'Flame' ? <Flame /> : <Dna />}
+        {!isCreatingList && lists.length === 0 ? (
+          <div className="bg-surface-container-low p-10 rounded-[32px] border border-outline-variant/10 flex flex-col items-center justify-center text-center gap-4">
+             <div className="w-16 h-16 rounded-full bg-surface-container text-primary flex items-center justify-center mb-2">
+               <ShoppingCart size={32} />
+             </div>
+             <h3 className="text-xl font-bold text-on-surface">Nenhuma lista</h3>
+             <p className="text-outline text-sm">Clica no botão '+' para criares a primeira lista de compras da família.</p>
+          </div>
+        ) : (
+          lists.map(list => (
+             <div 
+               key={list.id} 
+               onClick={() => openList(list.id)}
+               className="bg-surface-container-low p-6 rounded-[32px] soft-shadow border border-outline-variant/10 flex flex-col gap-4 group active:scale-[0.98] transition-all cursor-pointer"
+             >
+               <div className="flex justify-between items-start">
+                 <div className="p-4 rounded-2xl bg-surface-container text-primary">
+                    {list.icon === 'ShoppingCart' ? <ShoppingCart /> : list.icon === 'Flame' ? <Flame /> : <Dna />}
+                 </div>
+                 <span className="bg-surface-container-low px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-primary">
+                   {list.itemCount} itens
+                 </span>
                </div>
-               <span className="bg-surface-container-low px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-primary">
-                 {list.itemCount} itens
-               </span>
+               <div>
+                 <h4 className="text-xl font-bold text-on-surface group-hover:text-primary transition-colors">{list.name}</h4>
+                 <p className="text-sm text-outline">Última edição: {list.lastEdited}</p>
+               </div>
              </div>
-             <div>
-               <h4 className="text-xl font-bold text-on-surface group-hover:text-primary transition-colors">{list.name}</h4>
-               <p className="text-sm text-outline">Última edição: {list.lastEdited}</p>
-             </div>
-           </div>
-        ))}
+          ))
+        )}
       </div>
     </div>
   );
