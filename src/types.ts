@@ -24,6 +24,7 @@ export interface ShoppingList {
   id: string;
   name: string;
   itemCount: number;
+  completedCount?: number;
   lastEdited: string;
   color: string;
   icon: string;

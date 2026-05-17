@@ -356,8 +356,9 @@ const AiRecipeGenerator = () => {
 };
 
 const Dashboard = () => {
-  const { lists, setActiveListId, setCurrentScreen, familyMembers } = useAppContext();
-  const [quickAddText, setQuickAddText] = useState('');
+  const { lists, setLists, setActiveListId, setCurrentScreen, familyMembers } = useAppContext();
+  const { data: session } = useSession();
+  const [newListName, setNewListName] = useState('');
   const [isListening, setIsListening] = useState(false);
 
   const startListening = () => {
@@ -376,7 +377,7 @@ const Dashboard = () => {
     
     recognition.onresult = (event: any) => {
       const transcript = event.results[0][0].transcript;
-      setQuickAddText(prev => prev ? `${prev} ${transcript}` : transcript);
+      setNewListName(prev => prev ? `${prev} ${transcript}` : transcript);
     };
 
     recognition.onend = () => setIsListening(false);
@@ -385,17 +386,49 @@ const Dashboard = () => {
     recognition.start();
   };
 
-  const handleQuickAdd = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && quickAddText.trim()) {
-      if (lists.length === 0) {
-        alert("Cria primeiro uma Lista de Compras para adicionares produtos!");
-        return;
+  const handleCreateList = async (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && newListName.trim()) {
+      const name = newListName.trim();
+      const tempId = 'temp_' + Math.random().toString(36).substr(2, 9);
+      
+      // Beautiful curated colors for lists
+      const listColors = ['#ff6b6b', '#4dadf7', '#37b24d', '#fcc419', '#cc5de8', '#f06595', '#20c997'];
+      const randomColor = listColors[Math.floor(Math.random() * listColors.length)];
+      
+      const newList: ShoppingList = {
+        id: tempId,
+        name: name,
+        itemCount: 0,
+        completedCount: 0,
+        lastEdited: 'agora mesmo',
+        color: randomColor,
+        icon: 'List'
+      };
+      
+      setLists(prev => [newList, ...prev]);
+      setNewListName('');
+      
+      try {
+        if (session?.user?.name) {
+          logActivity('Criou uma Lista', name, session.user.name).catch(console.error);
+        }
+        const dbList = await dbCreateList(name, randomColor, 'List');
+        
+        // Update temporary ID with real DB ID
+        setLists(prev => prev.map(l => l.id === tempId ? { 
+          ...l, 
+          id: dbList.id,
+          completedCount: 0
+        } : l));
+        
+        // Open the list details immediately to delight the user!
+        setActiveListId(dbList.id);
+        setCurrentScreen('list-detail');
+      } catch (err) {
+        console.error("Erro ao criar lista:", err);
+        setLists(prev => prev.filter(l => l.id !== tempId));
+        alert("Erro ao criar lista no servidor.");
       }
-      const targetList = lists[0];
-      setActiveListId(targetList.id);
-      setCurrentScreen('list-detail');
-      alert(`Em breve: Adição automática de "${quickAddText}" à lista "${targetList.name}"!`);
-      setQuickAddText('');
     }
   };
 
@@ -418,10 +451,10 @@ const Dashboard = () => {
           <Plus className="text-primary mr-4" size={24} />
           <input 
             type="text" 
-            value={quickAddText}
-            onChange={(e) => setQuickAddText(e.target.value)}
-            onKeyDown={handleQuickAdd}
-            placeholder="Adição rápida a qualquer lista..." 
+            value={newListName}
+            onChange={(e) => setNewListName(e.target.value)}
+            onKeyDown={handleCreateList}
+            placeholder="Criar nova lista de compras..." 
             className="flex-grow bg-transparent outline-none text-on-surface placeholder:text-outline-variant font-medium"
           />
           <div className="flex gap-3 text-outline">
