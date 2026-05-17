@@ -2423,7 +2423,18 @@ export default function App() {
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
   const [isLoadingDB, setIsLoadingDB] = useState(true);
   const [isSupermarketMode, setIsSupermarketMode] = useState(false);
+  const [globalAlert, setGlobalAlert] = useState<{ isOpen: boolean; message: string }>({
+    isOpen: false,
+    message: ''
+  });
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.alert = (msg: string) => {
+        setGlobalAlert({ isOpen: true, message: msg });
+      };
+    }
+  }, []);
   useEffect(() => {
     if (status === 'authenticated' && session?.user) {
       setCurrentScreen('home');
@@ -2530,6 +2541,35 @@ export default function App() {
       </AnimatePresence>
 
       <NavBar activeScreen={currentScreen} onScreenChange={setCurrentScreen} isSupermarketMode={isSupermarketMode} />
+
+      {/* Custom Global Alert Dialog */}
+      <AnimatePresence>
+        {globalAlert.isOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm">
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-surface-container-low border border-outline-variant/30 rounded-[32px] p-6 w-full max-w-sm soft-shadow flex flex-col items-center text-center"
+            >
+              <div className="w-12 h-12 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mb-4">
+                <Bell size={24} />
+              </div>
+              <h3 className="text-xl font-bold text-on-surface mb-2">Notificação</h3>
+              <p className="text-sm text-outline mb-6 leading-relaxed whitespace-pre-line text-left w-full">
+                {globalAlert.message}
+              </p>
+
+              <button 
+                onClick={() => setGlobalAlert({ isOpen: false, message: '' })}
+                className="w-full h-12 bg-primary text-white rounded-full font-bold active:scale-95 transition-all text-sm shadow-lg shadow-primary/20"
+              >
+                Entendido
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
       </div>
     </AppContext.Provider>
   );
