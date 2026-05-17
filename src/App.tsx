@@ -299,7 +299,7 @@ const AiRecipeGenerator = () => {
     ]).catch(() => console.error("Falha ao gravar receita na DB"));
     
     if (session?.user?.name) {
-      logActivity('Criou Receita com IA', recipe.title, session.user.name);
+      logActivity('Criou Receita com IA', recipe.title, session.user.name).catch(console.error);
     }
     
     alert(`Ingredientes adicionados à nova lista "${recipe.title}" e receita guardada!`);
@@ -519,13 +519,14 @@ const ListsOverview = () => {
     
     try {
       if (session?.user?.name) {
-        logActivity('Criou uma Lista', newList.name, session.user.name);
+        logActivity('Criou uma Lista', newList.name, session.user.name).catch(console.error);
       }
       const dbList = await dbCreateList(newList.name, newList.color, newList.icon);
       setLists(prev => prev.map(l => l.id === tempId ? { ...l, id: dbList.id } : l));
-    } catch (e) {
+    } catch (e: any) {
+      console.error("ERRO COMPLETO AO CRIAR LISTA:", e);
       setLists(prev => prev.filter(l => l.id !== tempId));
-      alert('Erro ao criar lista.');
+      alert('Erro ao criar lista. Vê a consola para mais detalhes.');
     }
   };
 
