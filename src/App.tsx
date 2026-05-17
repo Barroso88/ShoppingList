@@ -639,6 +639,10 @@ const ListDetail = () => {
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [editNameValue, setEditNameValue] = useState('');
 
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleteType, setDeleteType] = useState<'item' | 'list'>('item');
+  const [targetId, setTargetId] = useState<string | null>(null);
+
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<any>(null);
 
@@ -739,17 +743,27 @@ const ListDetail = () => {
   };
 
   const deleteItem = (id: string) => {
-    if (confirm('Apagar este produto da lista?')) {
+    setTargetId(id);
+    setDeleteType('item');
+    setDeleteConfirmOpen(true);
+  };
+
+  const deleteList = () => {
+    setDeleteType('list');
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    setDeleteConfirmOpen(false);
+    if (deleteType === 'item' && targetId) {
+      const id = targetId;
       setItems(prev => prev.filter(item => item.id !== id));
       setLists(prev => prev.map(l => l.id === activeListId ? { ...l, itemCount: Math.max(0, l.itemCount - 1), lastEdited: 'agora mesmo' } : l));
       if (!id.startsWith('temp_')) {
         dbDeleteItem(id).catch(() => alert('Erro ao apagar produto.'));
       }
-    }
-  };
-
-  const deleteList = () => {
-    if (confirm(`Tens a certeza que queres apagar a lista "${activeList?.name}" e todos os seus produtos?`)) {
+      setTargetId(null);
+    } else if (deleteType === 'list') {
       setItems(prev => prev.filter(item => item.listId !== activeListId));
       setLists(prev => prev.filter(l => l.id !== activeListId));
       setCurrentScreen('lists');
@@ -950,6 +964,54 @@ const ListDetail = () => {
           </div>
         )}
       </div>
+
+      <AnimatePresence>
+        {deleteConfirmOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setDeleteConfirmOpen(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              transition={{ type: 'spring', duration: 0.4 }}
+              className="relative bg-surface-container-low border border-outline-variant/30 rounded-[32px] p-6 max-w-sm w-full shadow-2xl z-10 text-center"
+            >
+              <div className="w-14 h-14 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Trash2 size={28} />
+              </div>
+              <h3 className="text-xl font-bold text-on-surface mb-2">
+                {deleteType === 'item' ? 'Apagar Produto' : 'Apagar Lista'}
+              </h3>
+              <p className="text-sm text-outline mb-6 leading-relaxed">
+                {deleteType === 'item' 
+                  ? 'Tens a certeza que desejas apagar este produto da tua lista de compras?' 
+                  : `Tens a certeza que desejas apagar a lista "${activeList?.name}" e todos os seus produtos? Esta ação não pode ser desfeita.`
+                }
+              </p>
+              <div className="flex gap-3">
+                <button 
+                  onClick={() => setDeleteConfirmOpen(false)}
+                  className="flex-1 py-3 px-4 rounded-2xl bg-surface-container hover:bg-surface-container-high text-on-surface font-semibold active:scale-95 transition-all text-sm border border-outline-variant/20"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  onClick={handleConfirmDelete}
+                  className="flex-1 py-3 px-4 rounded-2xl bg-red-500 hover:bg-red-600 text-white font-bold active:scale-95 transition-all text-sm shadow-md shadow-red-500/20"
+                >
+                  Apagar
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
