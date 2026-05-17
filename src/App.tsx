@@ -137,7 +137,7 @@ const Onboarding = ({ onStart }: { onStart: () => void }) => {
           transition={{ delay: 0.2 }}
           className="w-32 h-32 rounded-[32px] overflow-hidden shadow-2xl mb-4 flex items-center justify-center relative"
         >
-          <img src="/icon.png" alt="Shopping List Logo" className="absolute inset-0 w-full h-full object-cover scale-[1.05]" />
+          <img src="/icon.png?v=2" alt="Shopping List Logo" className="absolute inset-0 w-full h-full object-cover scale-[1.05]" />
         </motion.div>
 
         <div className="space-y-2">
