@@ -2,6 +2,7 @@
 import { useState, useEffect, createContext, useContext } from 'react';
 import { signIn, signOut, useSession } from 'next-auth/react';
 import { GoogleGenAI } from '@google/genai';
+import { getLists, createList as dbCreateList, deleteList as dbDeleteList, addItem as dbAddItem, toggleItemChecked as dbToggleItemChecked, updateItemQuantity as dbUpdateItemQuantity, updateItemName as dbUpdateItemName, deleteItem as dbDeleteItem } from '@/app/actions';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Home, 
@@ -435,22 +436,31 @@ const ListsOverview = () => {
   const [isCreatingList, setIsCreatingList] = useState(false);
   const [newListName, setNewListName] = useState('');
 
-  const confirmCreateList = () => {
+  const confirmCreateList = async () => {
     if (!newListName.trim()) {
       setIsCreatingList(false);
       return;
     }
+    const tempId = 'temp_' + Math.random().toString(36).substr(2, 9);
     const newList: ShoppingList = {
-      id: Math.random().toString(36).substr(2, 9),
+      id: tempId,
       name: newListName.trim(),
       itemCount: 0,
       lastEdited: 'agora mesmo',
-      color: '#primary',
-      icon: 'ShoppingCart'
+      color: '#ff6b6b',
+      icon: 'List'
     };
     setLists(prev => [newList, ...prev]);
     setIsCreatingList(false);
     setNewListName('');
+    
+    try {
+      const dbList = await dbCreateList(newList.name, newList.color, newList.icon);
+      setLists(prev => prev.map(l => l.id === tempId ? { ...l, id: dbList.id } : l));
+    } catch (e) {
+      setLists(prev => prev.filter(l => l.id !== tempId));
+      alert('Erro ao criar lista.');
+    }
   };
 
   const openList = (id: string) => {
@@ -571,13 +581,23 @@ const ListDetail = () => {
   const [editNameValue, setEditNameValue] = useState('');
 
   const toggleItem = (id: string) => {
-    setItems(prev => prev.map(item => item.id === id ? { ...item, checked: !item.checked } : item));
+    const item = items.find(i => i.id === id);
+    if (!item) return;
+    setItems(prev => prev.map(i => i.id === id ? { ...i, checked: !i.checked } : i));
+    if (!id.startsWith('temp_')) {
+      dbToggleItemChecked(id, !item.checked).catch(e => {
+        setItems(prev => prev.map(i => i.id === id ? { ...i, checked: item.checked } : i));
+      });
+    }
   };
 
   const deleteItem = (id: string) => {
     if (confirm('Apagar este produto da lista?')) {
       setItems(prev => prev.filter(item => item.id !== id));
       setLists(prev => prev.map(l => l.id === activeListId ? { ...l, itemCount: Math.max(0, l.itemCount - 1), lastEdited: 'agora mesmo' } : l));
+      if (!id.startsWith('temp_')) {
+        dbDeleteItem(id).catch(() => alert('Erro ao apagar produto.'));
+      }
     }
   };
 
@@ -586,6 +606,10 @@ const ListDetail = () => {
       setItems(prev => prev.filter(item => item.listId !== activeListId));
       setLists(prev => prev.filter(l => l.id !== activeListId));
       setCurrentScreen('lists');
+      
+      if (activeListId && !activeListId.startsWith('temp_')) {
+        dbDeleteList(activeListId).catch(() => alert('Erro ao apagar lista.'));
+      }
       setActiveListId(null);
     }
   };
@@ -597,7 +621,11 @@ const ListDetail = () => {
 
   const saveEdit = (id: string) => {
     if (editNameValue.trim() !== '') {
-      setItems(prev => prev.map(item => item.id === id ? { ...item, name: formatProductName(editNameValue) } : item));
+      const newName = formatProductName(editNameValue);
+      setItems(prev => prev.map(item => item.id === id ? { ...item, name: newName } : item));
+      if (!id.startsWith('temp_')) {
+        dbUpdateItemName(id, newName).catch(() => alert('Erro ao atualizar nome.'));
+      }
     }
     setEditingItemId(null);
   };
@@ -606,32 +634,49 @@ const ListDetail = () => {
     setItems(prev => prev.map(item => {
       if (item.id !== id) return item;
       const match = item.quantity.toString().match(/^(\d+(?:\.\d+)?)(.*)$/);
+      let newQuantity = item.quantity;
       if (match) {
         let num = parseFloat(match[1]);
         const suffix = match[2];
         num = Math.max(1, num + delta);
-        return { ...item, quantity: `${num}${suffix}` };
+        newQuantity = `${num}${suffix}`;
       } else {
         const parsed = parseInt(item.quantity) || 1;
-        return { ...item, quantity: String(Math.max(1, parsed + delta)) };
+        newQuantity = String(Math.max(1, parsed + delta));
       }
+      if (!id.startsWith('temp_')) {
+        dbUpdateItemQuantity(id, newQuantity).catch(() => {});
+      }
+      return { ...item, quantity: newQuantity };
     }));
   };
 
-  const handleAddItem = (e: React.FormEvent) => {
+  const handleAddItem = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newItemName.trim() || !activeListId) return;
+    
+    const tempId = 'temp_' + Math.random().toString(36).substr(2, 9);
     const newItem: ShoppingItem = {
-      id: Math.random().toString(36).substr(2, 9),
+      id: tempId,
       listId: activeListId,
       name: formatProductName(newItemName),
       quantity: '1',
       category: 'Outros',
       checked: false
     };
+    
     setItems(prev => [newItem, ...prev]);
     setLists(prev => prev.map(l => l.id === activeListId ? { ...l, itemCount: l.itemCount + 1, lastEdited: 'agora mesmo' } : l));
     setNewItemName('');
+    
+    try {
+      const dbItem = await dbAddItem(activeListId, newItem.name, newItem.category, newItem.quantity);
+      setItems(prev => prev.map(i => i.id === tempId ? { ...i, id: dbItem.id } : i));
+    } catch (err) {
+      setItems(prev => prev.filter(i => i.id !== tempId));
+      setLists(prev => prev.map(l => l.id === activeListId ? { ...l, itemCount: Math.max(0, l.itemCount - 1), lastEdited: 'agora mesmo' } : l));
+      alert('Erro ao adicionar produto.');
+    }
   };
 
   if (!activeList) return null;
@@ -1131,8 +1176,38 @@ export default function App() {
     }
   }, [status, session]);
   const [theme, setTheme] = useState<string>('dark-midnight');
-  const [items, setItems] = useState<ShoppingItem[]>(MOCK_ITEMS.map(i => ({...i, listId: 'l1'})));
-  const [lists, setLists] = useState<ShoppingList[]>(MOCK_LISTS);
+  const [items, setItems] = useState<ShoppingItem[]>([]);
+  const [lists, setLists] = useState<ShoppingList[]>([]);
+  const [isLoadingDB, setIsLoadingDB] = useState(true);
+
+  useEffect(() => {
+    if (status === 'authenticated') {
+      getLists().then(dbLists => {
+        const mappedLists = dbLists.map(list => ({
+          id: list.id,
+          name: list.name,
+          color: list.color,
+          icon: list.icon,
+          itemCount: list.items.length,
+          completedCount: list.items.filter(i => i.checked).length
+        }));
+        setLists(mappedLists);
+        
+        const allItems = dbLists.flatMap(list => list.items.map(item => ({
+          id: item.id,
+          name: item.name,
+          quantity: item.quantity,
+          category: item.category,
+          checked: item.checked,
+          isUrgent: item.isUrgent,
+          notes: item.notes || undefined,
+          listId: item.listId
+        })));
+        setItems(allItems);
+        setIsLoadingDB(false);
+      });
+    }
+  }, [status]);
   const [recipes, setRecipes] = useState<SavedRecipe[]>([]);
   const [activeRecipeId, setActiveRecipeId] = useState<string | null>(null);
   const [activeListId, setActiveListId] = useState<string | null>(null);
