@@ -667,10 +667,51 @@ const ListDetail = () => {
       setIsListening(true);
     };
 
-    recognition.onresult = (event: any) => {
+    recognition.onresult = async (event: any) => {
       const speechToText = event.results[0][0].transcript;
       if (speechToText) {
-        setNewItemName(speechToText.trim());
+        let processedText = speechToText
+          .replace(/\b e também \b/gi, ',')
+          .replace(/\b e também\b/gi, ',')
+          .replace(/\b e \b/gi, ',')
+          .replace(/\b mais \b/gi, ',');
+          
+        const rawItems = processedText.split(',');
+        const itemsToAdd = rawItems
+          .map((item: string) => item.trim())
+          .filter((item: string) => item.length > 0);
+
+        if (itemsToAdd.length === 0) return;
+
+        if (itemsToAdd.length === 1) {
+          setNewItemName(formatProductName(itemsToAdd[0]));
+        } else {
+          for (const name of itemsToAdd) {
+            const tempId = 'temp_' + Math.random().toString(36).substr(2, 9);
+            const formattedName = formatProductName(name);
+            const newItem: ShoppingItem = {
+              id: tempId,
+              listId: activeListId || '',
+              name: formattedName,
+              quantity: '1',
+              category: 'Outros',
+              checked: false
+            };
+            
+            setItems(prev => [newItem, ...prev]);
+            setLists(prev => prev.map(l => l.id === activeListId ? { ...l, itemCount: l.itemCount + 1, lastEdited: 'agora mesmo' } : l));
+            
+            try {
+              if (activeListId) {
+                const dbItem = await dbAddItem(activeListId, newItem.name, newItem.category, newItem.quantity);
+                setItems(prev => prev.map(i => i.id === tempId ? { ...i, id: dbItem.id } : i));
+              }
+            } catch (err) {
+              setItems(prev => prev.filter(i => i.id !== tempId));
+              setLists(prev => prev.map(l => l.id === activeListId ? { ...l, itemCount: Math.max(0, l.itemCount - 1), lastEdited: 'agora mesmo' } : l));
+            }
+          }
+        }
       }
     };
 
