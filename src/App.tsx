@@ -995,7 +995,13 @@ const ListDetail = ({ isSupermarketMode, setIsSupermarketMode }: { isSupermarket
       {!isSupermarketMode && (
         <form onSubmit={handleAddItem} className="relative mb-8">
           <div className="flex items-center bg-surface-container-low rounded-2xl h-14 px-5 border border-outline-variant/30 focus-within:border-primary focus-within:ring-2 ring-primary/20 transition-all">
-            <Plus size={20} className="text-primary mr-3 flex-shrink-0" />
+            <button 
+              type="submit"
+              disabled={!newItemName.trim()}
+              className={`mr-3 flex-shrink-0 transition-all ${newItemName.trim() ? 'text-primary scale-110 active:scale-90' : 'text-outline/40 cursor-default'}`}
+            >
+              <Plus size={20} />
+            </button>
             <input 
               type="text" 
               value={newItemName}
