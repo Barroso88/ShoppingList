@@ -407,7 +407,7 @@ const Dashboard = () => {
             <h2 className="text-xl font-bold text-on-surface">{familyMembers[0]?.name.split(' ')[0]}</h2>
           </div>
         </div>
-        <button className="w-10 h-10 flex items-center justify-center rounded-full bg-surface-container-low text-primary relative">
+        <button onClick={() => alert("Nenhuma notificação nova de momento!")} className="w-10 h-10 flex items-center justify-center rounded-full bg-surface-container-low text-primary relative active:scale-95 transition-all">
           <Bell size={20} />
           <div className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-surface" />
         </button>
