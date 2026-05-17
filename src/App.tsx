@@ -83,19 +83,19 @@ const useAppContext = () => {
 // --- Sub-components ---
 
 const NavBar = ({ activeScreen, onScreenChange, isSupermarketMode }: { activeScreen: AppScreen, onScreenChange: (s: AppScreen) => void, isSupermarketMode: boolean }) => {
-  const tabs: { id: AppScreen, label: string, icon: any, activeColor: string, activeBg: string }[] = [
-    { id: 'home', label: 'Início', icon: Home, activeColor: 'text-[#3b82f6]', activeBg: 'bg-[#3b82f6]/10' },
-    { id: 'lists', label: 'Listas', icon: List, activeColor: 'text-[#10b981]', activeBg: 'bg-[#10b981]/10' },
-    { id: 'pantry', label: 'Despensa', icon: Archive, activeColor: 'text-[#20c997]', activeBg: 'bg-[#20c997]/10' },
-    { id: 'recipes', label: 'Receitas', icon: ChefHat, activeColor: 'text-[#f59e0b]', activeBg: 'bg-[#f59e0b]/10' },
-    { id: 'family', label: 'Família', icon: Users, activeColor: 'text-[#8b5cf6]', activeBg: 'bg-[#8b5cf6]/10' },
-    { id: 'settings', label: 'Definições', icon: SettingsIcon, activeColor: 'text-[#ec4899]', activeBg: 'bg-[#ec4899]/10' },
+  const tabs: { id: AppScreen, label: string, icon: any, activeColor: string, activeBg: string, shadowColor: string }[] = [
+    { id: 'home', label: 'Início', icon: Home, activeColor: 'text-[#00e5ff]', activeBg: 'bg-[#00e5ff]/10', shadowColor: 'rgba(0, 229, 255, 0.4)' },
+    { id: 'lists', label: 'Listas', icon: List, activeColor: 'text-[#00f5a0]', activeBg: 'bg-[#00f5a0]/10', shadowColor: 'rgba(0, 245, 160, 0.4)' },
+    { id: 'pantry', label: 'Despensa', icon: Archive, activeColor: 'text-[#00ffcc]', activeBg: 'bg-[#00ffcc]/10', shadowColor: 'rgba(0, 255, 204, 0.4)' },
+    { id: 'recipes', label: 'Receitas', icon: ChefHat, activeColor: 'text-[#ffaa00]', activeBg: 'bg-[#ffaa00]/10', shadowColor: 'rgba(255, 170, 0, 0.4)' },
+    { id: 'family', label: 'Família', icon: Users, activeColor: 'text-[#d946ef]', activeBg: 'bg-[#d946ef]/10', shadowColor: 'rgba(217, 70, 239, 0.4)' },
+    { id: 'settings', label: 'Definições', icon: SettingsIcon, activeColor: 'text-[#ff2e93]', activeBg: 'bg-[#ff2e93]/10', shadowColor: 'rgba(255, 46, 147, 0.4)' },
   ];
 
   if (activeScreen === 'onboarding' || isSupermarketMode) return null;
 
   return (
-    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md sm:max-w-2xl md:max-w-3xl lg:max-w-4xl z-50 bg-black border-t border-white/10 backdrop-blur-md pb-5 pt-2.5 px-4 sm:px-8 flex justify-between items-center sm:rounded-t-3xl soft-shadow">
+    <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-md sm:max-w-xl md:max-w-2xl lg:max-w-3xl z-50 bg-[#0d0e12]/85 border border-white/10 backdrop-blur-xl py-2.5 px-3 sm:px-6 flex justify-between items-center rounded-3xl soft-shadow shadow-2xl shadow-black/90">
       {tabs.map((tab) => {
         const Icon = tab.icon;
         const isActive = activeScreen === tab.id;
@@ -103,14 +103,29 @@ const NavBar = ({ activeScreen, onScreenChange, isSupermarketMode }: { activeScr
           <button 
             key={tab.id}
             onClick={() => onScreenChange(tab.id)}
-            className={`flex flex-col items-center gap-0.5 transition-all ${tab.activeColor} ${isActive ? 'scale-105 opacity-100' : 'opacity-40 hover:opacity-80'}`}
+            className={`flex-1 flex flex-col items-center gap-0.5 transition-all relative py-1 rounded-2xl ${isActive ? tab.activeColor : 'text-outline/50 hover:text-outline/80 hover:scale-105'}`}
+            style={{ transitionDuration: '250ms' }}
           >
-            <div className={`p-1.5 rounded-xl transition-all ${isActive ? tab.activeBg : 'bg-transparent'}`}>
+            {/* Slideable active tab background pill */}
+            {isActive && (
+              <motion.div 
+                layoutId="activeTabPill"
+                className={`absolute inset-0 ${tab.activeBg} rounded-2xl z-0`}
+                transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+              />
+            )}
+            
+            <div 
+              className="relative z-10 flex flex-col items-center gap-0.5"
+              style={{ 
+                filter: isActive ? `drop-shadow(0 0 6px ${tab.shadowColor})` : 'none'
+              }}
+            >
               <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
+              <span className={`text-[9px] uppercase tracking-tight ${isActive ? 'font-bold' : 'font-semibold'}`}>
+                {tab.label}
+              </span>
             </div>
-            <span className={`text-[9px] uppercase tracking-tight transition-all ${isActive ? 'font-bold' : 'font-semibold'}`}>
-              {tab.label}
-            </span>
           </button>
         );
       })}
