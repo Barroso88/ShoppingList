@@ -341,11 +341,13 @@ const AiRecipeGenerator = () => {
 
   return (
     <section className="mb-10">
-      <h3 className="text-2xl font-bold tracking-tight text-on-surface mb-4">Chef IA 🧑‍🍳</h3>
+      <div className="px-1 mb-4">
+        <h3 className="text-xs font-bold uppercase tracking-widest text-on-surface/80">Chef IA 🧑‍🍳</h3>
+      </div>
       
       {options.length === 0 && !selectedOption && (
         <div className="bg-surface-container-low p-6 rounded-[32px] soft-shadow border border-outline-variant/10">
-          <p className="text-on-surface font-medium mb-4">O que te apetece cozinhar hoje? Diz-me os ingredientes ou o tipo de prato e darei 3 opções deliciosas!</p>
+          <p className="text-xs text-outline/80 leading-relaxed font-semibold mb-4">O que te apetece cozinhar hoje? Diz-me os ingredientes ou o tipo de prato e darei 3 opções deliciosas!</p>
           <div className="flex gap-2">
             <input 
               type="text" 
@@ -583,8 +585,8 @@ const Dashboard = () => {
             <img src={currentUser?.avatar} alt="Profile" className="w-full h-full object-cover" />
           </div>
           <div>
-            <p className="text-sm text-outline">Bom dia,</p>
-            <h2 className="text-xl font-bold text-on-surface">{currentUser?.name.split(' ')[0]}</h2>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-outline/80">Bom dia,</p>
+            <h2 className="text-lg font-bold text-on-surface leading-tight">{currentUser?.name.split(' ')[0]}</h2>
           </div>
         </div>
       </header>
@@ -604,7 +606,7 @@ const Dashboard = () => {
             onChange={(e) => setNewListName(e.target.value)}
             onKeyDown={handleCreateList}
             placeholder="Criar nova lista de compras..." 
-            className="flex-grow bg-transparent outline-none text-on-surface placeholder:text-outline-variant font-medium"
+            className="flex-grow bg-transparent outline-none text-sm text-on-surface placeholder:text-outline/40 font-medium"
           />
           <div className="flex gap-3 text-outline">
             <button onClick={startListening} className={`transition-colors ${isListening ? 'text-red-500 animate-pulse' : 'hover:text-primary'}`}>
@@ -615,9 +617,9 @@ const Dashboard = () => {
       </div>
 
       <section className="mb-10">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-2xl font-bold tracking-tight text-on-surface">Listas Ativas</h3>
-          <button onClick={() => setCurrentScreen('lists')} className="text-sm font-bold text-primary active:opacity-70 transition-opacity">Ver Tudo</button>
+        <div className="flex justify-between items-center mb-4 px-1">
+          <h3 className="text-xs font-bold uppercase tracking-widest text-on-surface/80">Listas Ativas</h3>
+          <button onClick={() => setCurrentScreen('lists')} className="text-xs font-bold text-primary active:opacity-75 transition-opacity">Ver Tudo</button>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {lists.length > 0 ? lists.map((list) => {
@@ -626,7 +628,7 @@ const Dashboard = () => {
               <div 
                 key={list.id} 
                 onClick={() => { setActiveListId(list.id); setCurrentScreen('list-detail'); }}
-                className="p-6 rounded-[32px] soft-shadow flex flex-col gap-4 group active:scale-[0.98] transition-all cursor-pointer border"
+                className="p-5 rounded-[28px] soft-shadow flex flex-col gap-4 group active:scale-[0.98] transition-all cursor-pointer border"
                 style={{ 
                   background: `linear-gradient(135deg, ${cardColor}18, ${cardColor}04)`,
                   borderColor: `${cardColor}35`,
@@ -635,16 +637,16 @@ const Dashboard = () => {
               >
                 <div className="flex justify-between items-start">
                   <div 
-                    className="p-4 rounded-2xl flex items-center justify-center" 
+                    className="p-3.5 rounded-2xl flex items-center justify-center" 
                     style={{ 
                       backgroundColor: `${cardColor}25`, 
                       color: cardColor 
                     }}
                   >
-                     {list.icon === 'ShoppingCart' ? <ShoppingCart /> : list.icon === 'Flame' ? <Flame /> : <Dna />}
+                     {list.icon === 'ShoppingCart' ? <ShoppingCart size={20} /> : list.icon === 'Flame' ? <Flame size={20} /> : <Dna size={20} />}
                   </div>
                   <span 
-                    className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border"
+                    className="px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider border"
                     style={{ 
                       backgroundColor: `${cardColor}10`,
                       color: cardColor,
@@ -656,12 +658,12 @@ const Dashboard = () => {
                 </div>
                 <div>
                   <h4 
-                    className="text-xl font-bold transition-colors"
+                    className="text-base font-extrabold transition-colors leading-tight"
                     style={{ color: cardColor }}
                   >
                     {list.name}
                   </h4>
-                  <p className="text-sm text-outline/80">Última edição: {list.lastEdited}</p>
+                  <p className="text-xs text-outline/70 font-medium mt-0.5">Última edição: {list.lastEdited}</p>
                 </div>
               </div>
             );
