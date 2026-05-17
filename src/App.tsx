@@ -406,6 +406,7 @@ const Dashboard = () => {
             <p className="text-sm text-outline">Bom dia,</p>
             <h2 className="text-xl font-bold text-on-surface">{familyMembers[0]?.name.split(' ')[0]}</h2>
           </div>
+        </div>
       </header>
 
       <div className="relative mb-10">

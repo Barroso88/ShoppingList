@@ -307,6 +307,13 @@ self.__SERVER_FILES_MANIFEST={
     "eslint": {
       "ignoreDuringBuilds": true
     },
+    "serverActions": {
+      "allowedOrigins": [
+        "shopping.barrosoportal.com",
+        "localhost:3056",
+        "localhost:3000"
+      ]
+    },
     "turbopack": {
       "root": "/Users/andrebarroso/Documents/shoplist"
     },
