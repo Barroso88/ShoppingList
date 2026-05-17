@@ -95,7 +95,7 @@ const NavBar = ({ activeScreen, onScreenChange, isSupermarketMode }: { activeScr
   if (activeScreen === 'onboarding' || isSupermarketMode) return null;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 pb-6 pt-3 px-6 flex justify-between items-center z-50 bg-black border-t border-white/10 backdrop-blur-md">
+    <nav className="fixed bottom-0 left-0 right-0 pb-5 pt-2.5 px-3 flex justify-between items-center z-50 bg-black border-t border-white/10 backdrop-blur-md">
       {tabs.map((tab) => {
         const Icon = tab.icon;
         const isActive = activeScreen === tab.id;
@@ -103,12 +103,12 @@ const NavBar = ({ activeScreen, onScreenChange, isSupermarketMode }: { activeScr
           <button 
             key={tab.id}
             onClick={() => onScreenChange(tab.id)}
-            className={`flex flex-col items-center gap-1 transition-all ${tab.activeColor} ${isActive ? 'scale-110 opacity-100' : 'opacity-40 hover:opacity-80'}`}
+            className={`flex flex-col items-center gap-0.5 transition-all ${tab.activeColor} ${isActive ? 'scale-105 opacity-100' : 'opacity-40 hover:opacity-80'}`}
           >
-            <div className={`p-2 rounded-2xl transition-all ${isActive ? tab.activeBg : 'bg-transparent'}`}>
-              <Icon size={24} strokeWidth={isActive ? 2.5 : 2} />
+            <div className={`p-1.5 rounded-xl transition-all ${isActive ? tab.activeBg : 'bg-transparent'}`}>
+              <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
             </div>
-            <span className={`text-[10px] uppercase tracking-wider transition-all ${isActive ? 'font-bold' : 'font-semibold'}`}>
+            <span className={`text-[9px] uppercase tracking-tight transition-all ${isActive ? 'font-bold' : 'font-semibold'}`}>
               {tab.label}
             </span>
           </button>
