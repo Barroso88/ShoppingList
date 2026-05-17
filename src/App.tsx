@@ -89,7 +89,7 @@ const NavBar = ({ activeScreen, onScreenChange }: { activeScreen: AppScreen, onS
   if (activeScreen === 'onboarding') return null;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 glass pb-6 pt-3 px-6 flex justify-between items-center z-50">
+    <nav className="fixed bottom-0 left-0 right-0 pb-6 pt-3 px-6 flex justify-between items-center z-50 bg-black border-t border-white/10 backdrop-blur-md">
       {tabs.map((tab) => {
         const Icon = tab.icon;
         const isActive = activeScreen === tab.id;
