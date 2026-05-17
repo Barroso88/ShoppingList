@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, createContext, useContext, useRef } from 'react';
 import { signIn, signOut, useSession } from 'next-auth/react';
-import { getLists, createList as dbCreateList, deleteList as dbDeleteList, addItem as dbAddItem, toggleItemChecked as dbToggleItemChecked, updateItemQuantity as dbUpdateItemQuantity, updateItemName as dbUpdateItemName, deleteItem as dbDeleteItem, getRecipes, saveRecipe as dbSaveRecipe, deleteRecipe as dbDeleteRecipe, getActivities, logActivity, generateRecipeWithAI } from '@/app/actions';
+import { getLists, createList as dbCreateList, deleteList as dbDeleteList, addItem as dbAddItem, toggleItemChecked as dbToggleItemChecked, updateItemQuantity as dbUpdateItemQuantity, updateItemName as dbUpdateItemName, deleteItem as dbDeleteItem, getRecipes, saveRecipe as dbSaveRecipe, deleteRecipe as dbDeleteRecipe, getActivities, logActivity, generateRecipeWithAI, getFamilyMembers as dbGetFamilyMembers, getFamilyCode as dbGetFamilyCode, updateFamilyCode as dbUpdateFamilyCode } from '@/app/actions';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Home, 
@@ -1337,10 +1337,37 @@ const Settings = ({ theme, setTheme }: { theme: string, setTheme: (t: string) =>
   const [tempName, setTempName] = useState(user?.name || '');
   const [securityModalOpen, setSecurityModalOpen] = useState(false);
 
+  const [familyCode, setFamilyCode] = useState('default-family');
+  const [isEditingFamily, setIsEditingFamily] = useState(false);
+  const [tempFamilyCode, setTempFamilyCode] = useState('');
+  const [isSavingFamilyCode, setIsSavingFamilyCode] = useState(false);
+
+  useEffect(() => {
+    dbGetFamilyCode().then(code => {
+      setFamilyCode(code);
+      setTempFamilyCode(code);
+    }).catch(() => {});
+  }, []);
+
   const handleSaveName = () => {
     if (!tempName.trim()) return;
     setFamilyMembers(prev => prev.map((m, i) => i === 0 ? { ...m, name: tempName.trim() } : m));
     setIsEditingName(false);
+  };
+
+  const handleSaveFamilyCode = async () => {
+    if (!tempFamilyCode.trim()) return;
+    setIsSavingFamilyCode(true);
+    try {
+      const newCode = await dbUpdateFamilyCode(tempFamilyCode);
+      setFamilyCode(newCode);
+      setIsEditingFamily(false);
+      window.location.reload();
+    } catch (err: any) {
+      alert("Erro ao atualizar código de família: " + err.message);
+    } finally {
+      setIsSavingFamilyCode(false);
+    }
   };
 
   return (
@@ -1429,19 +1456,47 @@ const Settings = ({ theme, setTheme }: { theme: string, setTheme: (t: string) =>
 
         <section>
           <h3 className="text-xs font-bold text-outline uppercase tracking-[0.2em] mb-4">Grupo Familiar</h3>
-          <div className="bg-surface-container-low p-6 rounded-[32px] border border-outline-variant/20 flex items-center justify-between">
-             <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-surface-container flex items-center justify-center text-primary">
-                   <Users size={20} />
+          <div className="bg-surface-container-low p-6 rounded-[32px] border border-outline-variant/20 flex flex-col gap-6">
+             <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                   <div className="w-12 h-12 rounded-2xl bg-surface-container flex items-center justify-center text-primary">
+                      <Users size={20} />
+                   </div>
+                   <div>
+                      <h4 className="font-bold text-on-surface">Código de Família</h4>
+                      <p className="text-xs text-outline font-mono mt-0.5 select-all">
+                        {familyCode}
+                      </p>
+                   </div>
                 </div>
-                <div>
-                   <h4 className="font-bold text-on-surface">Gerir Grupo Familiar</h4>
-                   <p className="text-xs text-outline">{familyMembers.length} Membros Ativos</p>
-                </div>
+                <button 
+                  onClick={() => {
+                    setTempFamilyCode(familyCode);
+                    setIsEditingFamily(true);
+                  }} 
+                  className="bg-surface-container border border-outline-variant/30 px-4 py-2 rounded-xl text-xs font-bold text-on-surface hover:bg-surface-container-high transition-colors active:scale-95"
+                >
+                   Alterar
+                </button>
              </div>
-             <button onClick={() => setCurrentScreen('family')} className="bg-surface-container border border-outline-variant/30 px-4 py-2 rounded-xl text-xs font-bold text-on-surface hover:bg-surface-container-high transition-colors">
-                Gerir
-             </button>
+             
+             <div className="flex items-center justify-between border-t border-outline-variant/10 pt-4">
+                <div className="flex items-center gap-4">
+                   <div className="w-12 h-12 rounded-2xl bg-surface-container flex items-center justify-center text-[#10b981]">
+                      <Users size={20} />
+                   </div>
+                   <div>
+                      <h4 className="font-bold text-on-surface">Membros da Família</h4>
+                      <p className="text-xs text-outline">{familyMembers.length} Membros Ativos</p>
+                   </div>
+                </div>
+                <button 
+                  onClick={() => setCurrentScreen('family')} 
+                  className="bg-surface-container border border-outline-variant/30 px-4 py-2 rounded-xl text-xs font-bold text-on-surface hover:bg-surface-container-high transition-colors active:scale-95"
+                >
+                   Ver Todos
+                </button>
+             </div>
           </div>
         </section>
 
@@ -1501,6 +1556,56 @@ const Settings = ({ theme, setTheme }: { theme: string, setTheme: (t: string) =>
                   className="flex-1 h-12 bg-primary text-white rounded-full font-bold active:scale-95 transition-all text-sm shadow-lg shadow-primary/20"
                 >
                   Guardar
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Modal Editar Código de Família */}
+      <AnimatePresence>
+        {isEditingFamily && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm">
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-surface-container-low border border-outline-variant/30 rounded-[32px] p-6 w-full max-w-md soft-shadow"
+            >
+              <h3 className="text-xl font-bold text-on-surface mb-2">Alterar Código de Família</h3>
+              <p className="text-sm text-outline mb-6">Para partilhar listas com o teu cônjuge ou pais, insere o mesmo código de família.</p>
+              
+              <div className="space-y-4 mb-8">
+                <div>
+                  <label className="text-xs font-bold text-outline uppercase tracking-wider block mb-2">Código de Família</label>
+                  <input 
+                    type="text" 
+                    value={tempFamilyCode}
+                    onChange={(e) => setTempFamilyCode(e.target.value)}
+                    className="w-full bg-surface border border-outline-variant/30 rounded-2xl px-4 py-3 text-sm text-on-surface outline-none focus:border-primary font-mono"
+                    placeholder="ex: familia-andre..."
+                  />
+                  <p className="text-[10px] text-outline mt-2 leading-relaxed">
+                    💡 **Nota:** Se alterares o código, a aplicação irá recarregar automaticamente para carregar as listas e receitas correspondentes a este novo grupo.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <button 
+                  onClick={() => setIsEditingFamily(false)}
+                  disabled={isSavingFamilyCode}
+                  className="flex-1 h-12 bg-surface-container border border-outline-variant/20 text-on-surface rounded-full font-bold text-sm active:scale-95 transition-all disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  onClick={handleSaveFamilyCode}
+                  disabled={isSavingFamilyCode || !tempFamilyCode.trim()}
+                  className="flex-1 h-12 bg-[#10b981] text-white rounded-full font-bold active:scale-95 transition-all text-sm shadow-lg shadow-[#10b981]/20 flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {isSavingFamilyCode ? 'A Guardar...' : 'Confirmar'}
                 </button>
               </div>
             </motion.div>
@@ -1709,13 +1814,6 @@ export default function App() {
   useEffect(() => {
     if (status === 'authenticated' && session?.user) {
       setCurrentScreen('home');
-      setFamilyMembers([{
-        id: session.user.email || '1',
-        name: session.user.name || 'Utilizador',
-        role: 'Admin',
-        avatar: session.user.image || '',
-        email: session.user.email || ''
-      }]);
     } else if (status === 'unauthenticated') {
       setCurrentScreen('onboarding');
       setFamilyMembers([]);
@@ -1724,6 +1822,10 @@ export default function App() {
 
   useEffect(() => {
     if (status === 'authenticated') {
+      dbGetFamilyMembers().then(members => {
+        setFamilyMembers(members);
+      }).catch(() => {});
+
       getLists().then(dbLists => {
         const mappedLists = dbLists.map(list => ({
           id: list.id,

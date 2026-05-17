@@ -15,6 +15,7 @@ model User {
   emailVerified DateTime?
   image         String?   // NextAuth maps Google avatar here
   role          String    @default("Membro")
+  familyId      String    @default("default-family")
   
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -64,6 +65,7 @@ model ShoppingList {
   name        String
   color       String   @default("#ff6b6b")
   icon        String   @default("List")
+  familyId    String   @default("default-family")
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -98,6 +100,7 @@ model SavedRecipe {
   title        String
   description  String
   emoji        String   @default("🍲")
+  familyId     String   @default("default-family")
   
   // Guardamos a estrutura da receita em JSON para maior flexibilidade
   ingredients  Json     // Formato esperado: [{ "name": "...", "quantity": "...", "category": "..." }]
@@ -112,6 +115,7 @@ model Activity {
   action      String
   target      String
   userName    String
+  familyId    String   @default("default-family")
   
   createdAt   DateTime @default(now())
 }

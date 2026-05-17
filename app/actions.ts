@@ -2,10 +2,59 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "./api/auth/[...nextauth]/route";
+
+async function getFamilyId() {
+  const session = await getServerSession(authOptions);
+  if (!session || !session.user) {
+    throw new Error("Não autenticado");
+  }
+  return (session.user as any).familyId || "default-family";
+}
+
+// --- Family Management ---
+export async function getFamilyCode() {
+  return await getFamilyId();
+}
+
+export async function updateFamilyCode(code: string) {
+  const session = await getServerSession(authOptions);
+  if (!session || !session.user) {
+    throw new Error("Não autenticado");
+  }
+  const userId = (session.user as any).id;
+  const trimmedCode = code.trim().toLowerCase();
+  if (!trimmedCode) throw new Error("Código inválido");
+
+  const user = await prisma.user.update({
+    where: { id: userId },
+    data: { familyId: trimmedCode }
+  });
+  
+  revalidatePath("/");
+  return user.familyId;
+}
+
+export async function getFamilyMembers() {
+  const familyId = await getFamilyId();
+  const users = await prisma.user.findMany({
+    where: { familyId }
+  });
+  return users.map(u => ({
+    id: u.id,
+    name: u.name || 'Membro',
+    role: (u.role === 'Admin' ? 'Admin' : 'Membro') as 'Membro' | 'Admin',
+    avatar: u.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${u.id}`,
+    email: u.email || ''
+  }));
+}
 
 // --- Lists ---
 export async function getLists() {
+  const familyId = await getFamilyId();
   return prisma.shoppingList.findMany({
+    where: { familyId },
     include: {
       items: true
     },
@@ -14,8 +63,12 @@ export async function getLists() {
 }
 
 export async function createList(name: string, color: string, icon: string) {
+  const familyId = await getFamilyId();
+  const session = await getServerSession(authOptions);
+  const userId = (session?.user as any)?.id;
+  
   const list = await prisma.shoppingList.create({
-    data: { name, color, icon }
+    data: { name, color, icon, familyId, ownerId: userId }
   });
   revalidatePath("/");
   return list;
@@ -73,29 +126,35 @@ export async function deleteItem(id: string) {
 
 // --- Activities ---
 export async function getActivities() {
+  const familyId = await getFamilyId();
   return prisma.activity.findMany({
+    where: { familyId },
     orderBy: { createdAt: 'desc' },
     take: 50
   });
 }
 
 export async function logActivity(action: string, target: string, userName: string) {
+  const familyId = await getFamilyId();
   await prisma.activity.create({
-    data: { action, target, userName }
+    data: { action, target, userName, familyId }
   });
   revalidatePath("/");
 }
 
 // --- Recipes ---
 export async function getRecipes() {
+  const familyId = await getFamilyId();
   return prisma.savedRecipe.findMany({
+    where: { familyId },
     orderBy: { createdAt: 'desc' }
   });
 }
 
 export async function saveRecipe(title: string, description: string, emoji: string, ingredients: any, instructions: any) {
+  const familyId = await getFamilyId();
   const recipe = await prisma.savedRecipe.create({
-    data: { title, description, emoji, ingredients, instructions }
+    data: { title, description, emoji, ingredients, instructions, familyId }
   });
   revalidatePath("/");
   return recipe;
