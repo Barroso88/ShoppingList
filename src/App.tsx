@@ -103,7 +103,7 @@ const NavBar = ({ activeScreen, onScreenChange, isSupermarketMode }: { activeScr
           <button 
             key={tab.id}
             onClick={() => onScreenChange(tab.id)}
-            className={`flex-1 flex flex-col items-center gap-0.5 transition-all relative py-1 rounded-2xl ${isActive ? tab.activeColor : 'text-outline/50 hover:text-outline/80 hover:scale-105'}`}
+            className={`flex-1 flex flex-col items-center gap-0.5 transition-all relative py-1 rounded-2xl ${tab.activeColor} ${isActive ? 'scale-105 opacity-100' : 'opacity-55 hover:opacity-90 hover:scale-105'}`}
             style={{ transitionDuration: '250ms' }}
           >
             {/* Slideable active tab background pill */}
