@@ -232,26 +232,34 @@ const AiRecipeGenerator = () => {
   const { data: session } = useSession();
   const [prompt, setPrompt] = useState('');
   const [loading, setLoading] = useState(false);
-  const [recipe, setRecipe] = useState<any>(null);
+  const [options, setOptions] = useState<any[]>([]);
+  const [selectedOption, setSelectedOption] = useState<any | null>(null);
 
   const generateRecipe = async () => {
     if (!prompt.trim()) return;
     setLoading(true);
+    setOptions([]);
+    setSelectedOption(null);
     try {
       const response = await generateRecipeWithAI(prompt);
       if (response.error) {
         throw new Error(response.error);
       }
-      setRecipe(response.data);
+      if (response.data && Array.isArray(response.data.recipes)) {
+        setOptions(response.data.recipes);
+      } else {
+        throw new Error('Formato de resposta inesperado do Chef IA.');
+      }
     } catch (e: any) {
       console.error('Gemini Error:', e);
-      alert('Erro ao gerar receita: ' + (e.message || 'Erro desconhecido'));
+      alert('Erro ao gerar sugestões: ' + (e.message || 'Erro desconhecido'));
     }
     setLoading(false);
   };
 
   const addIngredientsToList = () => {
-    if (!recipe) return;
+    if (!selectedOption) return;
+    const recipe = selectedOption;
     const newListId = Math.random().toString(36).substr(2, 9);
 
     const newItems: ShoppingItem[] = recipe.ingredients.map((ing: any) => ({
@@ -304,22 +312,24 @@ const AiRecipeGenerator = () => {
     }
     
     alert(`Ingredientes adicionados à nova lista "${recipe.title}" e receita guardada!`);
-    setRecipe(null);
+    setOptions([]);
+    setSelectedOption(null);
     setPrompt('');
   };
 
   return (
     <section className="mb-10">
       <h3 className="text-2xl font-bold tracking-tight text-on-surface mb-4">Chef IA 🧑‍🍳</h3>
-      {!recipe ? (
+      
+      {options.length === 0 && !selectedOption && (
         <div className="bg-surface-container-low p-6 rounded-[32px] soft-shadow border border-outline-variant/10">
-          <p className="text-on-surface font-medium mb-4">O que te apetece cozinhar hoje? Diz-me o que tens no frigorífico ou o tipo de prato.</p>
+          <p className="text-on-surface font-medium mb-4">O que te apetece cozinhar hoje? Diz-me os ingredientes ou o tipo de prato e darei 3 opções deliciosas!</p>
           <div className="flex gap-2">
             <input 
               type="text" 
               value={prompt}
               onChange={e => setPrompt(e.target.value)}
-              placeholder="Ex: Jantar rápido com frango..."
+              placeholder="Ex: Almoço rápido com massa..."
               className="flex-grow bg-surface border border-outline-variant/30 rounded-2xl px-4 py-3 text-sm text-on-surface outline-none focus:border-primary"
               onKeyDown={e => e.key === 'Enter' && generateRecipe()}
             />
@@ -332,39 +342,95 @@ const AiRecipeGenerator = () => {
             </button>
           </div>
         </div>
-      ) : (
+      )}
+
+      {options.length > 0 && !selectedOption && (
+        <div className="bg-surface-container-low p-6 rounded-[32px] soft-shadow border border-outline-variant/10">
+          <div className="flex items-center justify-between mb-6">
+            <h4 className="text-lg font-bold text-on-surface">Sugestões do Chef IA</h4>
+            <button 
+              onClick={() => { setOptions([]); setPrompt(''); }}
+              className="text-xs font-bold text-primary bg-primary/10 px-3 py-1.5 rounded-full hover:bg-primary/20 transition-all active:scale-95"
+            >
+              Nova Pesquisa
+            </button>
+          </div>
+          
+          <p className="text-sm text-outline mb-6 font-medium">Selecionei 3 sugestões criativas e variadas para si. Escolha uma para ver a receita completa:</p>
+          
+          <div className="space-y-3">
+            {options.map((opt, idx) => (
+              <div 
+                key={idx}
+                onClick={() => setSelectedOption(opt)}
+                className="bg-surface p-4 rounded-3xl border border-outline-variant/15 hover:border-primary/40 active:scale-[0.98] transition-all cursor-pointer flex items-center gap-4 group justify-between"
+              >
+                <div className="flex items-center gap-4 min-w-0 flex-grow">
+                  <div className="w-12 h-12 rounded-2xl bg-surface-container flex items-center justify-center text-2xl flex-shrink-0">
+                    {opt.emoji || '🍲'}
+                  </div>
+                  <div className="min-w-0 flex-grow">
+                    <h5 className="font-bold text-on-surface group-hover:text-primary transition-colors truncate">{opt.title}</h5>
+                    <p className="text-xs text-outline truncate">{opt.description}</p>
+                  </div>
+                </div>
+                <ChevronRight size={18} className="text-outline/40 group-hover:text-primary transition-colors flex-shrink-0" />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {selectedOption && (
         <div className="relative rounded-[40px] overflow-hidden soft-shadow bg-surface-container-low border border-outline-variant/10">
           <div className="h-48 relative overflow-hidden bg-gradient-to-br from-primary to-primary-container flex items-center justify-center">
-             <span className="text-8xl drop-shadow-2xl">{recipe.emoji}</span>
+             <span className="text-8xl drop-shadow-2xl">{selectedOption.emoji}</span>
              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
              <div className="absolute bottom-4 left-6 right-6 text-white">
-                <span className="bg-white/20 backdrop-blur-md px-3 py-1 border border-white/20 rounded-full text-[10px] font-bold uppercase tracking-widest mb-2 inline-block">Receita Gerada</span>
-                <h4 className="text-2xl font-bold leading-tight drop-shadow-md">{recipe.title}</h4>
+                <span className="bg-white/20 backdrop-blur-md px-3 py-1 border border-white/20 rounded-full text-[10px] font-bold uppercase tracking-widest mb-2 inline-block">Opção Escolhida</span>
+                <h4 className="text-2xl font-bold leading-tight drop-shadow-md">{selectedOption.title}</h4>
              </div>
           </div>
           <div className="p-6">
-            <p className="text-outline text-sm mb-6">{recipe.description}</p>
+            <p className="text-outline text-sm mb-6">{selectedOption.description}</p>
             <h5 className="font-bold text-on-surface mb-3">Ingredientes:</h5>
             <ul className="space-y-2 mb-6">
-              {recipe.ingredients.map((ing: any, idx: number) => (
+              {selectedOption.ingredients.map((ing: any, idx: number) => (
                 <li key={idx} className="flex justify-between items-center text-sm bg-surface p-3 rounded-2xl border border-outline-variant/10">
                   <span className="text-on-surface font-medium">{ing.name}</span>
                   <span className="text-primary font-bold">{ing.quantity}</span>
                 </li>
               ))}
             </ul>
+            
+            {selectedOption.instructions && selectedOption.instructions.length > 0 && (
+              <div className="mb-6">
+                <h5 className="font-bold text-on-surface mb-3">Preparação:</h5>
+                <div className="space-y-3">
+                  {selectedOption.instructions.map((step: string, idx: number) => (
+                    <div key={idx} className="flex gap-3 bg-surface p-3 rounded-2xl border border-outline-variant/10 text-sm">
+                      <div className="w-5 h-5 rounded-full bg-primary/10 text-primary font-bold flex items-center justify-center text-xs flex-shrink-0">
+                        {idx + 1}
+                      </div>
+                      <p className="text-on-surface font-medium leading-relaxed">{step}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="flex gap-3">
               <button 
-                onClick={() => setRecipe(null)}
+                onClick={() => setSelectedOption(null)}
                 className="h-14 px-6 bg-surface-container border border-outline-variant/20 text-on-surface rounded-full font-bold text-sm active:scale-95 transition-all"
               >
-                Voltar
+                Voltar às Opções
               </button>
               <button 
                 onClick={addIngredientsToList}
                 className="flex-grow h-14 bg-primary text-white rounded-full font-bold active:scale-95 transition-all text-sm flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
               >
-                <ShoppingCart size={18} /> Adicionar à Lista
+                <ShoppingCart size={18} /> Escolher esta Receita
               </button>
             </div>
           </div>

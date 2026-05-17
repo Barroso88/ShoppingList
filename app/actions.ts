@@ -179,21 +179,50 @@ export async function generateRecipeWithAI(prompt: string) {
     const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
-      contents: `You are a versatile, friendly, and expert chef. The user wants a recipe based on: "${prompt}".
+      contents: `You are a versatile, friendly, and expert chef. The user wants recipe ideas based on: "${prompt}".
       You support both Portuguese (Portugal) and Brazilian culinary traditions and language styles.
-      CRITICAL: Write the recipe in the dialect and culinary style matching the requested dish. If the user mentions Brazilian ingredients (e.g. 'mandioca', 'creme de leite', 'presunto') or typical Brazilian dishes, write EVERYTHING in Brazilian Portuguese (pt-BR). If the user mentions European Portuguese ingredients (e.g. 'natas', 'fiambre') or typical Portuguese dishes, write EVERYTHING in European Portuguese (pt-PT). Otherwise, default to a friendly European Portuguese (pt-PT) style but make it easily readable, inviting, and delicious for both Portuguese and Brazilian users.
+      CRITICAL: Write the recipes in the dialect and culinary style matching the requested dish. If the user mentions Brazilian ingredients (e.g. 'mandioca', 'creme de leite', 'presunto') or typical Brazilian dishes, write EVERYTHING in Brazilian Portuguese (pt-BR). If the user mentions European Portuguese ingredients (e.g. 'natas', 'fiambre') or typical Portuguese dishes, write EVERYTHING in European Portuguese (pt-PT). Otherwise, default to a friendly European Portuguese (pt-PT) style but make it easily readable, inviting, and delicious for both Portuguese and Brazilian users.
+      
+      Generate EXACTLY 3 distinct, creative, and delicious recipe options that match the user's request. Make them differ in cooking style, effort level, or main pairing so the user has an interesting choice!
+      
       Return ONLY a JSON object with the following structure:
       {
-        "title": "Recipe Name",
-        "description": "Short description",
-        "emoji": "🍲",
-        "ingredients": [
-          { "name": "Ingredient 1", "quantity": "1 cup", "category": "Despensa" },
-          { "name": "Ingredient 2", "quantity": "2", "category": "Frutas e Legumes" }
-        ],
-        "instructions": [
-          "Passo 1...",
-          "Passo 2..."
+        "recipes": [
+          {
+            "title": "Recipe Option 1 Name",
+            "description": "Short description of this option",
+            "emoji": "🍲",
+            "ingredients": [
+              { "name": "Ingredient 1", "quantity": "1 cup", "category": "Despensa" },
+              { "name": "Ingredient 2", "quantity": "2", "category": "Frutas e Legumes" }
+            ],
+            "instructions": [
+              "Passo 1...",
+              "Passo 2..."
+            ]
+          },
+          {
+            "title": "Recipe Option 2 Name",
+            "description": "Short description of this option",
+            "emoji": "🍳",
+            "ingredients": [
+              { "name": "Ingredient 1", "quantity": "1 cup", "category": "Despensa" }
+            ],
+            "instructions": [
+              "Passo 1..."
+            ]
+          },
+          {
+            "title": "Recipe Option 3 Name",
+            "description": "Short description of this option",
+            "emoji": "🥗",
+            "ingredients": [
+              { "name": "Ingredient 1", "quantity": "1 cup", "category": "Despensa" }
+            ],
+            "instructions": [
+              "Passo 1..."
+            ]
+          }
         ]
       }`,
       config: { responseMimeType: "application/json" }
