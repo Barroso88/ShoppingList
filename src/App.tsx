@@ -1809,6 +1809,9 @@ const Pantry = () => {
   const [isListening, setIsListening] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleteItemId, setDeleteItemId] = useState<string | null>(null);
+  const [transferModalOpen, setTransferModalOpen] = useState(false);
+  const [transferItem, setTransferItem] = useState<PantryItem | null>(null);
+  const [selectedListId, setSelectedListId] = useState<string>('');
 
   const categories = ['Mercearia', 'Laticínios', 'Congelados', 'Frutas e Legumes', 'Bebidas', 'Higiene', 'Pet Shop', 'Outros'];
 
@@ -1922,12 +1925,9 @@ const Pantry = () => {
     }
   };
 
-  const handleTransferToShoppingList = async (pantryItem: PantryItem) => {
-    if (lists.length === 0) {
-      alert("Cria primeiro uma Lista de Compras para adicionares produtos!");
-      return;
-    }
-    const targetList = lists[0];
+  const handleTransferToShoppingList = async (pantryItem: PantryItem, targetListId: string) => {
+    const targetList = lists.find(l => l.id === targetListId);
+    if (!targetList) return;
     
     const tempId = 'temp_' + Math.random().toString(36).substr(2, 9);
     const newShoppingItem = {
@@ -1942,8 +1942,6 @@ const Pantry = () => {
     setItems(prev => [...prev, newShoppingItem]);
     setLists(prev => prev.map(l => l.id === targetList.id ? { ...l, itemCount: l.itemCount + 1 } : l));
 
-    alert(`Adicionado "${pantryItem.quantity}x ${pantryItem.name}" à tua lista de compras "${targetList.name}"!`);
-
     try {
       if (session?.user?.name) {
         logActivity('Adicionou da Despensa', pantryItem.name, session.user.name).catch(console.error);
@@ -1955,6 +1953,18 @@ const Pantry = () => {
       setItems(prev => prev.filter(i => i.id !== tempId));
       setLists(prev => prev.map(l => l.id === targetList.id ? { ...l, itemCount: Math.max(0, l.itemCount - 1) } : l));
     }
+  };
+
+  const confirmTransfer = async () => {
+    if (!transferItem || !selectedListId) return;
+    const item = transferItem;
+    const listId = selectedListId;
+    
+    setTransferModalOpen(false);
+    setTransferItem(null);
+    setSelectedListId('');
+    
+    await handleTransferToShoppingList(item, listId);
   };
 
   const filteredItems = pantryItems.filter(item => {
@@ -2078,7 +2088,15 @@ const Pantry = () => {
               <div className="flex items-center gap-3">
                 {/* Transferir para lista de compras */}
                 <button 
-                  onClick={() => handleTransferToShoppingList(item)}
+                  onClick={() => {
+                    if (lists.length === 0) {
+                      alert("Cria primeiro uma Lista de Compras para adicionares produtos!");
+                      return;
+                    }
+                    setTransferItem(item);
+                    setSelectedListId(lists[0]?.id || '');
+                    setTransferModalOpen(true);
+                  }}
                   className="w-9 h-9 bg-primary/10 text-primary rounded-xl flex items-center justify-center hover:bg-primary/20 transition-colors active:scale-90"
                   title="Adicionar à lista de compras"
                 >
@@ -2155,6 +2173,84 @@ const Pantry = () => {
                   className="flex-1 h-12 bg-red-500 text-white rounded-full font-bold active:scale-95 transition-all text-sm shadow-lg shadow-red-500/20"
                 >
                   Eliminar
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {transferModalOpen && transferItem && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm">
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-surface-container-low border border-outline-variant/30 rounded-[32px] p-6 w-full max-w-sm soft-shadow flex flex-col max-h-[85vh]"
+            >
+              <div className="w-12 h-12 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mb-4 flex-shrink-0">
+                <ShoppingCart size={24} />
+              </div>
+              <h3 className="text-xl font-bold text-on-surface mb-1">Adicionar à Lista</h3>
+              <p className="text-sm text-outline mb-4 leading-relaxed">
+                Escolhe a lista onde queres adicionar <span className="text-primary font-bold">{transferItem.name}</span> ({transferItem.quantity}):
+              </p>
+
+              {/* Lista de Listas Selecionáveis */}
+              <div className="space-y-2 overflow-y-auto pr-1 flex-grow mb-6 max-h-[35vh] custom-scrollbar">
+                {lists.map((list) => {
+                  const isSelected = selectedListId === list.id;
+                  return (
+                    <div
+                      key={list.id}
+                      onClick={() => setSelectedListId(list.id)}
+                      className={`p-4 rounded-2xl border transition-all flex items-center justify-between cursor-pointer active:scale-[0.98] ${
+                        isSelected 
+                          ? 'bg-primary/10 border-primary/40 soft-shadow' 
+                          : 'bg-surface-container border-outline-variant/10 hover:border-outline-variant/30'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div 
+                          className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                          style={{ backgroundColor: `${list.color}20`, color: list.color }}
+                        >
+                          {list.icon === 'ShoppingCart' ? <ShoppingCart size={20} /> : list.icon === 'Flame' ? <Flame size={20} /> : <Dna size={20} />}
+                        </div>
+                        <div className="min-w-0">
+                          <h4 className="font-bold text-on-surface text-sm truncate">{list.name}</h4>
+                          <span className="text-[10px] text-outline font-semibold">{list.itemCount} itens</span>
+                        </div>
+                      </div>
+                      
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                        isSelected ? 'border-primary bg-primary' : 'border-outline-variant'
+                      }`}>
+                        {isSelected && (
+                          <div className="w-2 h-2 bg-white rounded-full" />
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="flex gap-3 mt-auto flex-shrink-0">
+                <button 
+                  onClick={() => {
+                    setTransferModalOpen(false);
+                    setTransferItem(null);
+                    setSelectedListId('');
+                  }}
+                  className="flex-1 h-12 bg-surface-container border border-outline-variant/20 text-on-surface rounded-full font-bold text-sm active:scale-95 transition-all"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  onClick={confirmTransfer}
+                  disabled={!selectedListId}
+                  className="flex-1 h-12 bg-primary disabled:opacity-40 disabled:pointer-events-none text-white rounded-full font-bold active:scale-95 transition-all text-sm shadow-lg shadow-primary/20"
+                >
+                  Adicionar
                 </button>
               </div>
             </motion.div>
