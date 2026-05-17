@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, createContext, useContext } from 'react';
+import { useState, useEffect, createContext, useContext, useRef } from 'react';
 import { signIn, signOut, useSession } from 'next-auth/react';
 import { getLists, createList as dbCreateList, deleteList as dbDeleteList, addItem as dbAddItem, toggleItemChecked as dbToggleItemChecked, updateItemQuantity as dbUpdateItemQuantity, updateItemName as dbUpdateItemName, deleteItem as dbDeleteItem, getRecipes, saveRecipe as dbSaveRecipe, deleteRecipe as dbDeleteRecipe, getActivities, logActivity, generateRecipeWithAI } from '@/app/actions';
 import { motion, AnimatePresence } from 'motion/react';
@@ -639,6 +639,53 @@ const ListDetail = () => {
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [editNameValue, setEditNameValue] = useState('');
 
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
+
+  const toggleListening = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("A funcionalidade de voz não é suportada neste navegador.");
+      return;
+    }
+
+    if (isListening) {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+      setIsListening(false);
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'pt-PT';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    recognitionRef.current = recognition;
+
+    recognition.onstart = () => {
+      setIsListening(true);
+    };
+
+    recognition.onresult = (event: any) => {
+      const speechToText = event.results[0][0].transcript;
+      if (speechToText) {
+        setNewItemName(speechToText.trim());
+      }
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error("Erro no reconhecimento de voz:", event.error);
+      setIsListening(false);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognition.start();
+  };
+
   const toggleItem = (id: string) => {
     const item = items.find(i => i.id === id);
     if (!item) return;
@@ -763,14 +810,21 @@ const ListDetail = () => {
 
       <form onSubmit={handleAddItem} className="relative mb-8">
         <div className="flex items-center bg-surface-container-low rounded-2xl h-14 px-5 border border-outline-variant/30 focus-within:border-primary focus-within:ring-2 ring-primary/20 transition-all">
-          <Plus size={20} className="text-primary mr-3" />
+          <Plus size={20} className="text-primary mr-3 flex-shrink-0" />
           <input 
             type="text" 
             value={newItemName}
             onChange={e => setNewItemName(e.target.value)}
             placeholder="Adicionar produto à lista..." 
-            className="flex-grow bg-transparent outline-none text-on-surface placeholder:text-outline-variant font-medium"
+            className="flex-grow bg-transparent outline-none text-on-surface placeholder:text-outline-variant font-medium pr-2 min-w-0"
           />
+          <button 
+            type="button"
+            onClick={toggleListening}
+            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all flex-shrink-0 ${isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-transparent text-outline hover:text-primary active:scale-95'}`}
+          >
+            <Mic size={18} />
+          </button>
         </div>
       </form>
 
