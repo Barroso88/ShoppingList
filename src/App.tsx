@@ -2277,11 +2277,28 @@ const Pantry = () => {
 };
 
 const RecipesOverview = () => {
-  const { recipes, setActiveRecipeId, setCurrentScreen } = useAppContext();
+  const { recipes, setRecipes, setActiveRecipeId, setCurrentScreen } = useAppContext();
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deleteRecipeId, setDeleteRecipeId] = useState<string | null>(null);
 
   const openRecipe = (id: string) => {
     setActiveRecipeId(id);
     setCurrentScreen('recipe-detail');
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteRecipeId) return;
+    const id = deleteRecipeId;
+    setDeleteModalOpen(false);
+    setDeleteRecipeId(null);
+    
+    try {
+      setRecipes(prev => prev.filter(r => r.id !== id));
+      await dbDeleteRecipe(id);
+    } catch (e) {
+      console.error(e);
+      alert("Erro ao apagar receita.");
+    }
   };
 
   return (
@@ -2307,23 +2324,76 @@ const RecipesOverview = () => {
              <div 
                key={recipe.id} 
                onClick={() => openRecipe(recipe.id)}
-               className="bg-surface-container-low p-4 rounded-3xl soft-shadow border border-outline-variant/10 flex items-center gap-4 group active:scale-[0.98] transition-all cursor-pointer"
+               className="bg-surface-container-low p-4 rounded-3xl soft-shadow border border-outline-variant/10 flex items-center gap-4 group active:scale-[0.98] transition-all cursor-pointer justify-between"
              >
-               <div className="w-14 h-14 rounded-2xl bg-surface-container flex items-center justify-center text-3xl flex-shrink-0">
-                  {recipe.emoji}
+               <div className="flex items-center gap-4 min-w-0 flex-grow">
+                 <div className="w-14 h-14 rounded-2xl bg-surface-container flex items-center justify-center text-3xl flex-shrink-0">
+                    {recipe.emoji}
+                 </div>
+                 <h4 className="text-lg font-bold text-on-surface group-hover:text-primary transition-colors truncate">{recipe.title}</h4>
                </div>
-               <h4 className="text-lg font-bold text-on-surface group-hover:text-primary transition-colors flex-grow truncate">{recipe.title}</h4>
+
+               <button 
+                 onClick={(e) => {
+                   e.stopPropagation();
+                   setDeleteRecipeId(recipe.id);
+                   setDeleteModalOpen(true);
+                 }}
+                 className="w-9 h-9 bg-red-500/10 text-red-500 rounded-xl flex items-center justify-center hover:bg-red-500/20 transition-colors active:scale-90 flex-shrink-0"
+                 title="Apagar Receita"
+               >
+                 <Trash2 size={16} />
+               </button>
              </div>
           ))}
         </div>
       )}
+
+      {/* Modal Confirmar Eliminar Receita */}
+      <AnimatePresence>
+        {deleteModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm">
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-surface-container-low border border-outline-variant/30 rounded-[32px] p-6 w-full max-w-sm soft-shadow"
+            >
+              <div className="w-12 h-12 bg-red-500/10 text-red-500 rounded-2xl flex items-center justify-center mb-4">
+                <Trash2 size={24} />
+              </div>
+              <h3 className="text-xl font-bold text-on-surface mb-2">Eliminar Receita?</h3>
+              <p className="text-sm text-outline mb-6 leading-relaxed">Tens a certeza que queres remover esta receita das tuas receitas guardadas?</p>
+
+              <div className="flex gap-3">
+                <button 
+                  onClick={() => {
+                    setDeleteModalOpen(false);
+                    setDeleteRecipeId(null);
+                  }}
+                  className="flex-1 h-12 bg-surface-container border border-outline-variant/20 text-on-surface rounded-full font-bold text-sm active:scale-95 transition-all"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  onClick={confirmDelete}
+                  className="flex-1 h-12 bg-red-500 text-white rounded-full font-bold active:scale-95 transition-all text-sm shadow-lg shadow-red-500/20"
+                >
+                  Eliminar
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
 
 const RecipeDetail = () => {
-  const { recipes, activeRecipeId, setCurrentScreen, setItems, setLists } = useAppContext();
+  const { recipes, setRecipes, activeRecipeId, setCurrentScreen, setItems, setLists } = useAppContext();
   const { data: session } = useSession();
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const recipe = recipes.find(r => r.id === activeRecipeId);
 
   if (!recipe) return null;
@@ -2373,6 +2443,19 @@ const RecipeDetail = () => {
     }
   };
 
+  const confirmDelete = async () => {
+    setDeleteModalOpen(false);
+    
+    try {
+      setRecipes(prev => prev.filter(r => r.id !== recipe.id));
+      setCurrentScreen('recipes');
+      await dbDeleteRecipe(recipe.id);
+    } catch (e) {
+      console.error(e);
+      alert("Erro ao apagar receita.");
+    }
+  };
+
   return (
     <div className="pb-32 pt-16 px-6">
       <header className="flex items-center gap-4 mb-8">
@@ -2380,6 +2463,14 @@ const RecipeDetail = () => {
           <ChevronLeft size={24} />
         </button>
         <h2 className="text-2xl font-bold text-on-surface flex-grow truncate">{recipe.title}</h2>
+        
+        <button 
+          onClick={() => setDeleteModalOpen(true)}
+          className="w-10 h-10 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center hover:bg-red-500/20 transition-all shadow-sm"
+          title="Apagar Receita"
+        >
+          <Trash2 size={18} />
+        </button>
         <span className="text-2xl">{recipe.emoji}</span>
       </header>
 
@@ -2420,6 +2511,41 @@ const RecipeDetail = () => {
           )}
         </div>
       </section>
+
+      {/* Modal Confirmar Eliminar Receita */}
+      <AnimatePresence>
+        {deleteModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm">
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-surface-container-low border border-outline-variant/30 rounded-[32px] p-6 w-full max-w-sm soft-shadow"
+            >
+              <div className="w-12 h-12 bg-red-500/10 text-red-500 rounded-2xl flex items-center justify-center mb-4">
+                <Trash2 size={24} />
+              </div>
+              <h3 className="text-xl font-bold text-on-surface mb-2">Eliminar Receita?</h3>
+              <p className="text-sm text-outline mb-6 leading-relaxed">Tens a certeza que queres remover esta receita das tuas receitas guardadas?</p>
+
+              <div className="flex gap-3">
+                <button 
+                  onClick={() => setDeleteModalOpen(false)}
+                  className="flex-1 h-12 bg-surface-container border border-outline-variant/20 text-on-surface rounded-full font-bold text-sm active:scale-95 transition-all"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  onClick={confirmDelete}
+                  className="flex-1 h-12 bg-red-500 text-white rounded-full font-bold active:scale-95 transition-all text-sm shadow-lg shadow-red-500/20"
+                >
+                  Eliminar
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
