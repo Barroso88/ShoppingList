@@ -1259,10 +1259,56 @@ const RecipesOverview = () => {
 };
 
 const RecipeDetail = () => {
-  const { recipes, activeRecipeId, setCurrentScreen } = useAppContext();
+  const { recipes, activeRecipeId, setCurrentScreen, setItems, setLists } = useAppContext();
+  const { data: session } = useSession();
   const recipe = recipes.find(r => r.id === activeRecipeId);
 
   if (!recipe) return null;
+
+  const handleAddIngredients = async () => {
+    const newListId = Math.random().toString(36).substr(2, 9);
+
+    const newItems: ShoppingItem[] = recipe.ingredients.map((ing: any) => ({
+      id: Math.random().toString(36).substr(2, 9),
+      listId: newListId,
+      name: ing.name,
+      quantity: ing.quantity,
+      category: ing.category || 'Outros',
+      checked: false
+    }));
+    
+    setItems(prev => [...newItems, ...prev]);
+    
+    const newList: ShoppingList = {
+      id: newListId,
+      name: recipe.title,
+      itemCount: newItems.length,
+      lastEdited: 'agora mesmo',
+      color: '#ff6b6b',
+      icon: 'Flame'
+    };
+    
+    setLists(prev => [newList, ...prev]);
+
+    try {
+      const dbList = await dbCreateList(newList.name, newList.color, newList.icon);
+      const promises = newItems.map(item => dbAddItem(dbList.id, item.name, item.category, item.quantity));
+      await Promise.all(promises);
+      
+      setLists(prev => prev.map(l => l.id === newList.id ? { ...l, id: dbList.id } : l));
+      setItems(prev => prev.map(i => i.listId === newList.id ? { ...i, listId: dbList.id } : i));
+      
+      if (session?.user?.name) {
+        logActivity('Criou uma Lista', newList.name, session.user.name).catch(console.error);
+      }
+      
+      alert('Ingredientes adicionados com sucesso numa nova lista!');
+      setCurrentScreen('lists');
+    } catch (e) {
+      console.error("Falha ao gravar lista da receita na DB", e);
+      alert('Erro ao gravar a lista de compras na base de dados.');
+    }
+  };
 
   return (
     <div className="pb-32 pt-16 px-6">
@@ -1288,6 +1334,12 @@ const RecipeDetail = () => {
             </div>
           ))}
         </div>
+        <button 
+          onClick={handleAddIngredients}
+          className="w-full mt-4 h-14 bg-primary text-white rounded-2xl font-bold active:scale-95 transition-all text-sm flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
+        >
+          <ShoppingCart size={18} /> Adicionar à Lista de Compras
+        </button>
       </section>
 
       <section>
