@@ -731,7 +731,7 @@ const ListsOverview = () => {
           <div className="w-14 h-14 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mb-4">
             <List size={28} />
           </div>
-          <h2 className="text-2xl font-extrabold tracking-tight text-on-surface">As tuas Listas</h2>
+          <h2 className="text-2xl font-extrabold tracking-tight text-on-surface glow-title">As tuas Listas</h2>
         </div>
         <button onClick={() => setIsCreatingList(true)} className="w-12 h-12 bg-primary text-white rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-all mt-2">
           <Plus size={24} />
@@ -1223,7 +1223,7 @@ const ListDetail = ({ isSupermarketMode, setIsSupermarketMode }: { isSupermarket
               <span className="text-[10px] font-extrabold text-[#10b981] uppercase tracking-widest bg-[#10b981]/10 px-2 py-0.5 rounded-md border border-[#10b981]/25">
                 🛒 Modo Supermercado
               </span>
-              <h2 className="text-2xl font-extrabold text-on-surface tracking-tight mt-1.5">{activeList.name}</h2>
+              <h2 className="text-2xl font-extrabold text-on-surface tracking-tight mt-1.5 glow-title">{activeList.name}</h2>
             </div>
             <button 
               onClick={() => setIsSupermarketMode(false)}
@@ -1254,7 +1254,7 @@ const ListDetail = ({ isSupermarketMode, setIsSupermarketMode }: { isSupermarket
               <ChevronLeft size={24} />
             </button>
             <div className="flex flex-col min-w-0">
-              <h2 className="text-xl sm:text-2xl font-bold text-on-surface truncate">{activeList.name}</h2>
+              <h2 className="text-xl sm:text-2xl font-bold text-on-surface truncate glow-title">{activeList.name}</h2>
               <div className="flex items-center gap-1.5 mt-0.5">
                 <button 
                   onClick={() => setIsSupermarketMode(true)}
@@ -2314,7 +2314,7 @@ const Pantry = () => {
           <div className="w-14 h-14 bg-gradient-to-tr from-[#20c997] to-[#00f3ff] text-white rounded-2xl flex items-center justify-center mb-4 soft-shadow shadow-[#20c997]/25">
             <Archive size={28} />
           </div>
-          <h2 className="text-2xl font-extrabold tracking-tight text-on-surface">A minha Despensa</h2>
+          <h2 className="text-2xl font-extrabold tracking-tight text-on-surface glow-title">A minha Despensa</h2>
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1.5">
             <p className="text-xs text-outline font-medium">Gere o stock e as quantidades dos teus produtos em casa</p>
             <span className="hidden sm:inline w-1 h-1 rounded-full bg-[#20c997]/50"></span>
@@ -2764,7 +2764,7 @@ const RecipesOverview = () => {
           <div className="w-14 h-14 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mb-4">
             <ChefHat size={28} />
           </div>
-          <h2 className="text-2xl font-extrabold tracking-tight text-on-surface">As tuas Receitas</h2>
+          <h2 className="text-2xl font-extrabold tracking-tight text-on-surface glow-title">As tuas Receitas</h2>
         </div>
       </header>
 

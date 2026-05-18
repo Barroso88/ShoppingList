@@ -204,3 +204,8 @@
 .soft-shadow {
   box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.2);
 }
+
+.glow-title {
+  color: var(--app-on-surface);
+  text-shadow: 0 0 20px var(--app-primary);
+}
