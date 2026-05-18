@@ -3052,6 +3052,58 @@ export default function App() {
     message: ''
   });
 
+  const isNavigatingFromHistoryRef = useRef(false);
+
+  // Sync state changes TO browser history
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const histState = window.history.state;
+    const matchesHistory = 
+      histState && 
+      histState.currentScreen === currentScreen &&
+      histState.activeListId === activeListId &&
+      histState.activeRecipeId === activeRecipeId;
+
+    if (!matchesHistory) {
+      if (isNavigatingFromHistoryRef.current) {
+        isNavigatingFromHistoryRef.current = false;
+      } else {
+        window.history.pushState(
+          { currentScreen, activeListId, activeRecipeId },
+          ''
+        );
+      }
+    }
+  }, [currentScreen, activeListId, activeRecipeId]);
+
+  // Sync popstate (mobile physical back button) back TO react state
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    if (!window.history.state) {
+      window.history.replaceState(
+        { currentScreen, activeListId, activeRecipeId },
+        ''
+      );
+    }
+
+    const handlePopState = (event: PopStateEvent) => {
+      const state = event.state;
+      if (state && state.currentScreen) {
+        isNavigatingFromHistoryRef.current = true;
+        setCurrentScreen(state.currentScreen);
+        setActiveListId(state.activeListId || null);
+        setActiveRecipeId(state.activeRecipeId || null);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
       window.alert = (msg: string) => {
