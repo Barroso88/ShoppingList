@@ -2969,9 +2969,6 @@ const RecipeDetail = () => {
         </div>
       </header>
 
-      <section className="mb-8 bg-surface-container-low/50 border-l-4 border-primary/45 p-4 rounded-r-2xl">
-        <p className="text-xs font-semibold italic text-outline/90 leading-relaxed">{recipe.description}</p>
-      </section>
 
       <section className="mb-10">
         <div className="px-1 mb-4 flex items-center justify-between">
