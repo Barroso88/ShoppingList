@@ -2982,12 +2982,12 @@ const RecipeDetail = () => {
           {recipe.ingredients.map((ing, idx) => {
             const style = getCategoryStyle(ing.category || 'Outros');
             return (
-              <div key={idx} className="flex justify-between items-center border-b border-outline-variant/5 pb-3.5 last:border-0 last:pb-0">
-                 <div className="flex items-center min-w-0">
+              <div key={idx} className="flex justify-between items-center border-b border-outline-variant/5 pb-3.5 last:border-0 last:pb-0 gap-3">
+                 <div className="flex items-center min-w-0 flex-grow">
                    <span className="text-sm mr-2.5 flex-shrink-0" title={ing.category}>{style.emoji}</span>
-                   <span className="font-semibold text-sm text-on-surface truncate">{ing.name}</span>
+                   <span className="font-semibold text-sm text-on-surface break-words leading-tight">{ing.name}</span>
                  </div>
-                 <span className="text-xs font-bold bg-surface border border-outline-variant/15 px-3 py-1 rounded-xl text-primary shadow-sm flex-shrink-0 ml-2">
+                 <span className="text-xs font-bold bg-surface border border-outline-variant/15 px-3 py-1 rounded-xl text-primary shadow-sm flex-shrink-0">
                    {ing.quantity}
                  </span>
               </div>
