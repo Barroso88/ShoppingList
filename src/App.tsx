@@ -34,7 +34,8 @@ import {
   BookOpen,
   Zap,
   ChevronDown,
-  Archive
+  Archive,
+  X
 } from 'lucide-react';
 import { AppScreen, ShoppingList, FamilyMember, Activity, ShoppingItem, SavedRecipe, PantryItem } from './types.ts';
 import { MOCK_LISTS, MOCK_FAMILY, MOCK_ACTIVITY, MOCK_ITEMS } from './constants.ts';
@@ -1610,6 +1611,7 @@ const Family = () => {
   const { data: session } = useSession();
   const [isInviting, setIsInviting] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
+  const [selectedMember, setSelectedMember] = useState<FamilyMember | null>(null);
   
   const currentUser = familyMembers.find(m => m.email.trim().toLowerCase() === session?.user?.email?.trim().toLowerCase()) || familyMembers[0] || ({
     id: 'temp',
@@ -1670,20 +1672,32 @@ const Family = () => {
       </section>
 
       <div className="space-y-4 mb-8">
-        {otherMembers.length > 0 ? otherMembers.map((member) => (
-          <div key={member.id} className="bg-surface-container-low p-5 rounded-[32px] soft-shadow border border-outline-variant/10 flex items-center justify-between group active:scale-[0.98] transition-all">
-            <div className="flex items-center gap-4">
-              <img src={member.avatar} className="w-14 h-14 rounded-full border-2 border-surface" />
-              <div>
-                <h4 className="font-bold text-on-surface">{member.name}</h4>
-                <p className={`text-sm font-bold ${member.role === 'Admin' ? 'text-primary' : 'text-outline'}`}>{member.role}</p>
+        {familyMembers.length > 0 ? familyMembers.map((member) => {
+          const isMe = member.id === currentUser?.id;
+          return (
+            <div 
+              key={member.id} 
+              onClick={() => setSelectedMember(member)}
+              className="bg-surface-container-low p-5 rounded-[32px] soft-shadow border border-outline-variant/10 flex items-center justify-between group active:scale-[0.98] hover:border-primary/25 cursor-pointer transition-all"
+            >
+              <div className="flex items-center gap-4">
+                <img src={member.avatar} className="w-14 h-14 rounded-full border-2 border-surface object-cover flex-shrink-0" />
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h4 className="font-bold text-on-surface">{member.name}</h4>
+                    {isMe && (
+                      <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-primary/10 text-primary uppercase tracking-wider">Tu</span>
+                    )}
+                  </div>
+                  <p className={`text-sm font-bold ${member.role === 'Admin' ? 'text-primary' : 'text-outline'}`}>{member.role}</p>
+                </div>
               </div>
+              <button className="text-outline group-hover:text-primary transition-colors">
+                <MoreVertical size={20} />
+              </button>
             </div>
-            <button className="text-outline">
-              <MoreVertical size={20} />
-            </button>
-          </div>
-        )) : (
+          );
+        }) : (
           <p className="text-outline text-sm text-center mb-6">Ainda não adicionaste nenhum membro à tua família.</p>
         )}
         
@@ -1718,7 +1732,7 @@ const Family = () => {
       <section className="mb-10">
         <h3 className="text-lg font-bold text-on-surface/80 mb-4 opacity-50">Atividade Recente</h3>
         <div className="space-y-4">
-          {activities.length > 0 ? activities.map(act => (
+          {activities.length > 0 ? activities.slice(0, 5).map(act => (
             <div key={act.id} className="bg-surface-container-low p-5 rounded-[32px] border border-outline-variant/30 flex items-center gap-4">
               <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
                  <List size={22} />
@@ -1734,7 +1748,7 @@ const Family = () => {
         </div>
       </section>
 
-      <section>
+      <section className="mb-8">
         <h3 className="text-lg font-bold text-on-surface/80 mb-4 opacity-50">Definições de Partilha</h3>
         <div className="bg-surface-container-low rounded-[32px] soft-shadow border border-outline-variant/10 divide-y divide-outline-variant/10">
           {shareSettings.map((item) => (
@@ -1750,6 +1764,75 @@ const Family = () => {
           ))}
         </div>
       </section>
+
+      {/* Member Details Modal Overlay */}
+      <AnimatePresence>
+        {selectedMember && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
+            {/* Backdrop */}
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedMember(null)}
+              className="absolute inset-0 bg-background/60 backdrop-blur-md"
+            />
+            
+            {/* Modal Card */}
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ type: "spring", duration: 0.5 }}
+              className="bg-surface-container-low border border-outline-variant/15 w-full max-w-sm rounded-[36px] overflow-hidden soft-shadow relative p-6 z-10"
+            >
+              {/* Close button */}
+              <button 
+                onClick={() => setSelectedMember(null)}
+                className="absolute top-4 right-4 w-9 h-9 rounded-full bg-surface-container flex items-center justify-center text-outline hover:text-on-surface active:scale-95 transition-all"
+              >
+                <X size={18} />
+              </button>
+
+              {/* Card Header (Avatar and Role) */}
+              <div className="flex flex-col items-center text-center mt-4">
+                <div className="relative">
+                  <img 
+                    src={selectedMember.avatar} 
+                    alt={selectedMember.name} 
+                    className="w-24 h-24 rounded-full border-4 border-surface soft-shadow object-cover"
+                  />
+                  <span className="absolute bottom-0 right-0 px-2.5 py-0.5 rounded-full text-[9px] font-bold bg-primary text-white uppercase tracking-wider shadow-sm">
+                    {selectedMember.role}
+                  </span>
+                </div>
+                
+                {/* Details */}
+                <h3 className="text-xl font-extrabold text-on-surface mt-5 leading-tight glow-title">
+                  {selectedMember.name}
+                </h3>
+                <p className="text-xs text-outline font-medium mt-1">
+                  Membro da Família
+                </p>
+
+                {/* Email details field */}
+                <div className="w-full bg-surface/40 border border-outline-variant/10 rounded-2xl p-4.5 mt-6 flex flex-col gap-1.5 text-left backdrop-blur-sm">
+                  <span className="text-[10px] font-extrabold text-outline uppercase tracking-wider">Endereço de Email</span>
+                  <span className="text-sm font-semibold text-on-surface break-all">{selectedMember.email || 'Sem email associado'}</span>
+                </div>
+              </div>
+
+              {/* Close action button */}
+              <button 
+                onClick={() => setSelectedMember(null)}
+                className="w-full mt-6 py-3 bg-surface-container hover:bg-surface-container-high text-on-surface rounded-2xl font-bold text-sm active:scale-98 transition-all border border-outline-variant/10"
+              >
+                Fechar Detalhes
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
