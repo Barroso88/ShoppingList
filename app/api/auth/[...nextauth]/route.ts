@@ -12,6 +12,25 @@ export const authOptions = {
     }),
   ],
   callbacks: {
+    async signIn({ user, account, profile }: any) {
+      if (account?.provider === "google" && profile?.picture && user?.email) {
+        try {
+          const email = user.email.trim().toLowerCase();
+          const dbUser = await prisma.user.findUnique({
+            where: { email }
+          });
+          if (dbUser && dbUser.image !== profile.picture) {
+            await prisma.user.update({
+              where: { id: dbUser.id },
+              data: { image: profile.picture }
+            });
+          }
+        } catch (e) {
+          console.error("Error updating user image on sign in:", e);
+        }
+      }
+      return true;
+    },
     session({ session, user }: any) {
       if (session.user) {
         (session.user as any).id = user.id;
