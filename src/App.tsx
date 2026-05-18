@@ -859,7 +859,7 @@ const ListsOverview = () => {
                 </div>
                 <div>
                   <h4 
-                    className="text-xl font-bold transition-colors"
+                    className="text-base font-extrabold transition-colors leading-tight"
                     style={{ color: cardColor }}
                   >
                     {list.name}
@@ -1433,7 +1433,7 @@ const ListDetail = ({ isSupermarketMode, setIsSupermarketMode }: { isSupermarket
                           <div className="w-8 h-8 rounded-full bg-[#10b981] flex-shrink-0 flex items-center justify-center text-white border border-[#10b981]">
                             <Check size={16} strokeWidth={3} />
                           </div>
-                          <h4 className="text-lg font-bold text-on-surface line-through truncate">{item.name}</h4>
+                          <h4 className="text-sm font-semibold text-outline line-through truncate">{item.name}</h4>
                         </div>
                         <span className="text-xs font-bold text-outline">
                           x{item.quantity}
@@ -1479,10 +1479,10 @@ const ListDetail = ({ isSupermarketMode, setIsSupermarketMode }: { isSupermarket
                                onChange={e => setEditNameValue(e.target.value)}
                                onBlur={() => saveEdit(item.id)}
                                onKeyDown={e => e.key === 'Enter' && saveEdit(item.id)}
-                               className="text-lg font-bold leading-none bg-surface border-b-2 border-primary outline-none px-1 py-0.5 w-full text-on-surface"
+                               className="text-sm font-bold leading-none bg-surface border-b-2 border-primary outline-none px-1 py-0.5 w-full text-on-surface"
                              />
                           ) : (
-                             <h4 className={`text-lg font-bold leading-tight ${item.checked ? 'line-through text-outline' : 'text-on-surface'}`}>{item.name}</h4>
+                             <h4 className={`text-sm font-bold leading-tight ${item.checked ? 'line-through text-outline' : 'text-on-surface'}`}>{item.name}</h4>
                           )}
                           {item.notes && <p className="text-xs text-outline font-medium italic mt-1 truncate">{item.notes}</p>}
                         </div>
@@ -1498,21 +1498,21 @@ const ListDetail = ({ isSupermarketMode, setIsSupermarketMode }: { isSupermarket
                     {/* Bottom Row: Quantity controls and Action buttons */}
                     <div className="flex items-center justify-between mt-4 pt-3 border-t border-white/5">
                       {/* Quantity Control Pill */}
-                      <div className="bg-black/30 border border-white/5 rounded-2xl flex items-center p-1 gap-1">
+                      <div className="flex items-center bg-surface/40 border border-outline-variant/20 rounded-2xl p-1 gap-2 backdrop-blur-sm shadow-sm flex-shrink-0">
                         <button 
                           onClick={() => adjustQuantity(item.id, -1)} 
-                          className="w-7 h-7 rounded-xl flex items-center justify-center hover:bg-white/10 text-outline transition-colors"
+                          className="w-9 h-9 bg-surface-container rounded-xl flex items-center justify-center text-on-surface hover:text-primary active:scale-90 transition-all font-extrabold"
                         >
-                          <Minus size={12} strokeWidth={3} />
+                          <Minus size={13} strokeWidth={2.5} />
                         </button>
-                        <span className="px-2 text-xs font-extrabold text-on-surface min-w-[32px] text-center font-mono">
+                        <span className="text-sm font-extrabold w-6 text-center text-on-surface select-none">
                           {item.quantity}
                         </span>
                         <button 
                           onClick={() => adjustQuantity(item.id, 1)} 
-                          className="w-7 h-7 rounded-xl flex items-center justify-center hover:bg-white/10 text-outline transition-colors"
+                          className="w-9 h-9 bg-surface-container rounded-xl flex items-center justify-center text-on-surface hover:text-primary active:scale-90 transition-all font-extrabold"
                         >
-                          <Plus size={12} strokeWidth={3} />
+                          <Plus size={13} strokeWidth={2.5} />
                         </button>
                       </div>
 
@@ -2546,21 +2546,22 @@ const Pantry = () => {
                 {/* Bottom Row: Quantity controls and Action buttons */}
                 <div className="flex items-center justify-between mt-4 pt-3 border-t border-white/5">
                   {/* Quantity control pill */}
-                  <div className="bg-black/30 border border-white/5 rounded-2xl flex items-center p-1 gap-1">
+                  {/* Quantity control pill */}
+                  <div className="flex items-center bg-surface/40 border border-outline-variant/20 rounded-2xl p-1 gap-2 backdrop-blur-sm shadow-sm flex-shrink-0">
                     <button 
                       onClick={() => handleQuantityChange(item.id, 'dec')}
-                      className="w-7 h-7 rounded-xl flex items-center justify-center hover:bg-white/10 text-outline transition-colors"
+                      className="w-9 h-9 bg-surface-container rounded-xl flex items-center justify-center text-on-surface hover:text-[#20c997] active:scale-90 transition-all font-extrabold"
                     >
-                      <Minus size={14} />
+                      <Minus size={13} strokeWidth={2.5} />
                     </button>
-                    <span className="px-2 text-xs font-extrabold text-on-surface min-w-[32px] text-center font-mono">
+                    <span className="text-sm font-extrabold w-6 text-center text-on-surface select-none">
                       {item.quantity}
                     </span>
                     <button 
                       onClick={() => handleQuantityChange(item.id, 'inc')}
-                      className="w-7 h-7 rounded-xl flex items-center justify-center hover:bg-white/10 text-outline transition-colors"
+                      className="w-9 h-9 bg-surface-container rounded-xl flex items-center justify-center text-on-surface hover:text-[#20c997] active:scale-90 transition-all font-extrabold"
                     >
-                      <Plus size={14} />
+                      <Plus size={13} strokeWidth={2.5} />
                     </button>
                   </div>
 
