@@ -2326,58 +2326,63 @@ const Pantry = () => {
       </header>
 
       {/* Adicionar Artigo */}
-      <section className="bg-surface-container-low p-6 rounded-[32px] border border-outline-variant/15 mb-8 soft-shadow relative overflow-hidden">
+      <section className="bg-surface-container-low p-6 rounded-[32px] border border-[#20c997]/25 mb-8 soft-shadow relative overflow-hidden">
         <div className="absolute top-0 right-0 w-48 h-48 bg-[#20c997]/5 rounded-full blur-3xl pointer-events-none"></div>
-        <h3 className="text-xs font-bold text-[#20c997] uppercase tracking-wider block mb-4 flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-[#20c997] animate-pulse"></span>
+        <h3 className="text-[10px] font-extrabold text-[#20c997] uppercase tracking-wider block mb-4 flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#20c997] animate-pulse"></span>
           Novo Produto na Despensa
         </h3>
-        <form onSubmit={handleAddItem} className="space-y-4">
-          <div className="flex gap-2">
-            <div className="relative flex-grow">
-              <input 
-                type="text" 
-                placeholder="Ex: Arroz, Massa, Leite..." 
-                value={newItemName}
-                onChange={e => setNewItemName(e.target.value)}
-                className="w-full bg-surface/50 border border-outline-variant/30 rounded-2xl pl-4 pr-10 py-3 text-sm text-on-surface outline-none focus:border-[#20c997] transition-all font-medium placeholder:text-outline/40 backdrop-blur-sm"
-              />
-              <button 
-                type="button" 
-                onClick={startListening} 
-                className={`absolute right-3 top-3 transition-colors ${isListening ? 'text-red-500 animate-pulse' : 'text-outline hover:text-[#20c997]'}`}
-              >
-                <Mic size={18} />
-              </button>
-            </div>
+        <form onSubmit={handleAddItem} className="space-y-3">
+          {/* Row 1: Product Name Input (100% Width) */}
+          <div className="relative">
             <input 
               type="text" 
-              placeholder="Qtd (ex: 2, 500g)" 
-              value={newItemQty}
-              onChange={e => setNewItemQty(e.target.value)}
-              className="w-28 bg-surface/50 border border-outline-variant/30 rounded-2xl px-3 py-3 text-sm text-on-surface text-center outline-none focus:border-[#20c997] transition-all font-bold backdrop-blur-sm"
+              placeholder="Ex: Arroz, Massa, Leite..." 
+              value={newItemName}
+              onChange={e => setNewItemName(e.target.value)}
+              className="w-full bg-surface/40 border border-outline-variant/20 rounded-2xl pl-4 pr-11 py-3.5 text-sm text-on-surface outline-none focus:border-[#20c997] transition-all font-medium placeholder:text-outline/40 backdrop-blur-sm shadow-sm"
             />
+            <button 
+              type="button" 
+              onClick={startListening} 
+              className={`absolute right-3.5 top-3.5 transition-colors ${isListening ? 'text-red-500 animate-pulse' : 'text-outline hover:text-[#20c997]'}`}
+            >
+              <Mic size={18} />
+            </button>
           </div>
 
+          {/* Row 2: Quantity, Category and Submit Button */}
           <div className="flex gap-2">
-            <div className="relative flex-grow">
+            {/* Quantity Input */}
+            <input 
+              type="text" 
+              placeholder="Qtd (ex: 2)" 
+              value={newItemQty}
+              onChange={e => setNewItemQty(e.target.value)}
+              className="w-24 bg-surface/40 border border-outline-variant/20 rounded-2xl px-2 py-3.5 text-sm text-on-surface text-center outline-none focus:border-[#20c997] transition-all font-bold backdrop-blur-sm shadow-sm placeholder:text-outline/40 placeholder:font-normal"
+            />
+
+            {/* Category Select Dropdown */}
+            <div className="relative flex-grow min-w-0">
               <select 
                 value={newItemCategory}
                 onChange={e => setNewItemCategory(e.target.value)}
-                className="w-full bg-surface/50 border border-outline-variant/30 rounded-2xl px-4 py-3 text-sm text-on-surface outline-none focus:border-[#20c997] transition-all font-medium appearance-none cursor-pointer backdrop-blur-sm"
+                className="w-full bg-surface/40 border border-outline-variant/20 rounded-2xl pl-4 pr-9 py-3.5 text-sm text-on-surface outline-none focus:border-[#20c997] transition-all font-medium appearance-none cursor-pointer backdrop-blur-sm shadow-sm"
               >
                 {categories.map(cat => (
                   <option key={cat} value={cat}>{getCategoryStyle(cat).emoji} {cat}</option>
                 ))}
               </select>
-              <ChevronDown size={16} className="absolute right-4 top-4 text-outline pointer-events-none" />
+              <ChevronDown size={14} className="absolute right-3.5 top-4.5 text-outline pointer-events-none" />
             </div>
+
+            {/* Add Button */}
             <button 
               type="submit"
               disabled={!newItemName.trim()}
-              className="bg-gradient-to-r from-[#20c997] to-[#00f3ff] hover:brightness-110 text-white font-bold text-sm px-6 rounded-2xl transition-all flex items-center justify-center gap-1.5 active:scale-95 disabled:opacity-50 soft-shadow shadow-[#20c997]/20"
+              className="bg-gradient-to-r from-[#20c997] to-[#00f3ff] hover:brightness-110 text-white font-bold text-sm px-5 rounded-2xl transition-all flex items-center justify-center gap-1.5 active:scale-95 disabled:opacity-50 flex-shrink-0 soft-shadow shadow-[#20c997]/25"
             >
-              <Plus size={18} /> Adicionar
+              <Plus size={18} strokeWidth={3} />
             </button>
           </div>
         </form>
