@@ -74,6 +74,38 @@ export const getCategoryStyle = (category: string) => {
   }
 };
 
+export const formatRelativeTime = (dateInput: any): string => {
+  if (!dateInput) return 'agora mesmo';
+  if (typeof dateInput === 'string' && (dateInput === 'agora mesmo' || dateInput.startsWith('há '))) {
+    return dateInput;
+  }
+  
+  const date = dateInput instanceof Date ? dateInput : new Date(dateInput);
+  if (isNaN(date.getTime())) return String(dateInput);
+  
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffSec = Math.floor(diffMs / 1000);
+  const diffMin = Math.floor(diffSec / 60);
+  const diffHr = Math.floor(diffMin / 60);
+  const diffDays = Math.floor(diffHr / 24);
+  
+  if (diffSec < 60) {
+    return 'agora mesmo';
+  } else if (diffMin < 60) {
+    return `há ${diffMin} min${diffMin > 1 ? 's' : ''}`;
+  } else if (diffHr < 24) {
+    return `há ${diffHr} hora${diffHr > 1 ? 's' : ''}`;
+  } else if (diffDays < 7) {
+    return `há ${diffDays} dia${diffDays > 1 ? 's' : ''}`;
+  } else {
+    const dd = String(date.getDate()).padStart(2, '0');
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const yyyy = date.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+  }
+};
+
 // --- App Context ---
 type AppContextType = {
   items: ShoppingItem[];
@@ -320,7 +352,7 @@ const AiRecipeGenerator = () => {
       id: newListId,
       name: recipe.title,
       itemCount: newItems.length,
-      lastEdited: 'agora mesmo',
+      lastEdited: new Date().toISOString(),
       color: '#ff6b6b',
       icon: 'Flame'
     };
@@ -558,7 +590,7 @@ const Dashboard = () => {
         name: name,
         itemCount: 0,
         completedCount: 0,
-        lastEdited: 'agora mesmo',
+        lastEdited: new Date().toISOString(),
         color: randomColor,
         icon: 'List'
       };
@@ -684,7 +716,7 @@ const Dashboard = () => {
                   >
                     {list.name}
                   </h4>
-                  <p className="text-xs text-outline/70 font-medium mt-0.5">Última edição: {list.lastEdited}</p>
+                  <p className="text-xs text-outline/70 font-medium mt-0.5">Última edição: {formatRelativeTime(list.lastEdited)}</p>
                 </div>
               </div>
             );
@@ -719,7 +751,7 @@ const ListsOverview = () => {
       id: tempId,
       name: newListName.trim(),
       itemCount: 0,
-      lastEdited: 'agora mesmo',
+      lastEdited: new Date().toISOString(),
       color: '#ff6b6b',
       icon: 'List'
     };
@@ -832,7 +864,7 @@ const ListsOverview = () => {
                   >
                     {list.name}
                   </h4>
-                  <p className="text-sm text-outline/80">Última edição: {list.lastEdited}</p>
+                  <p className="text-sm text-outline/80">Última edição: {formatRelativeTime(list.lastEdited)}</p>
                 </div>
               </div>
             );
@@ -1035,7 +1067,7 @@ const ListDetail = ({ isSupermarketMode, setIsSupermarketMode }: { isSupermarket
             };
             
             setItems(prev => [newItem, ...prev]);
-            setLists(prev => prev.map(l => l.id === activeListId ? { ...l, itemCount: l.itemCount + 1, lastEdited: 'agora mesmo' } : l));
+            setLists(prev => prev.map(l => l.id === activeListId ? { ...l, itemCount: l.itemCount + 1, lastEdited: new Date().toISOString() } : l));
             
             try {
               if (activeListId) {
@@ -1044,7 +1076,7 @@ const ListDetail = ({ isSupermarketMode, setIsSupermarketMode }: { isSupermarket
               }
             } catch (err) {
               setItems(prev => prev.filter(i => i.id !== tempId));
-              setLists(prev => prev.map(l => l.id === activeListId ? { ...l, itemCount: Math.max(0, l.itemCount - 1), lastEdited: 'agora mesmo' } : l));
+              setLists(prev => prev.map(l => l.id === activeListId ? { ...l, itemCount: Math.max(0, l.itemCount - 1), lastEdited: new Date().toISOString() } : l));
             }
           }
         }
@@ -1151,7 +1183,7 @@ const ListDetail = ({ isSupermarketMode, setIsSupermarketMode }: { isSupermarket
     if (deleteType === 'item' && targetId) {
       const id = targetId;
       setItems(prev => prev.filter(item => item.id !== id));
-      setLists(prev => prev.map(l => l.id === activeListId ? { ...l, itemCount: Math.max(0, l.itemCount - 1), lastEdited: 'agora mesmo' } : l));
+      setLists(prev => prev.map(l => l.id === activeListId ? { ...l, itemCount: Math.max(0, l.itemCount - 1), lastEdited: new Date().toISOString() } : l));
       if (!id.startsWith('temp_')) {
         dbDeleteItem(id).catch(() => alert('Erro ao apagar produto.'));
       }
@@ -1220,7 +1252,7 @@ const ListDetail = ({ isSupermarketMode, setIsSupermarketMode }: { isSupermarket
     };
     
     setItems(prev => [newItem, ...prev]);
-    setLists(prev => prev.map(l => l.id === activeListId ? { ...l, itemCount: l.itemCount + 1, lastEdited: 'agora mesmo' } : l));
+    setLists(prev => prev.map(l => l.id === activeListId ? { ...l, itemCount: l.itemCount + 1, lastEdited: new Date().toISOString() } : l));
     setNewItemName('');
     
     try {
@@ -1228,7 +1260,7 @@ const ListDetail = ({ isSupermarketMode, setIsSupermarketMode }: { isSupermarket
       setItems(prev => prev.map(i => i.id === tempId ? { ...i, id: dbItem.id } : i));
     } catch (err) {
       setItems(prev => prev.filter(i => i.id !== tempId));
-      setLists(prev => prev.map(l => l.id === activeListId ? { ...l, itemCount: Math.max(0, l.itemCount - 1), lastEdited: 'agora mesmo' } : l));
+      setLists(prev => prev.map(l => l.id === activeListId ? { ...l, itemCount: Math.max(0, l.itemCount - 1), lastEdited: new Date().toISOString() } : l));
       alert('Erro ao adicionar produto.');
     }
   };
@@ -2270,7 +2302,7 @@ const Pantry = () => {
       id: tempId,
       name: listName,
       itemCount: 0,
-      lastEdited: 'agora mesmo',
+      lastEdited: new Date().toISOString(),
       color: '#ff6b6b',
       icon: 'List'
     };
@@ -2901,7 +2933,7 @@ const RecipeDetail = () => {
       id: newListId,
       name: recipe.title,
       itemCount: newItems.length,
-      lastEdited: 'agora mesmo',
+      lastEdited: new Date().toISOString(),
       color: '#ff6b6b',
       icon: 'Flame'
     };
@@ -3170,7 +3202,7 @@ export default function App() {
           icon: list.icon,
           itemCount: list.items.length,
           completedCount: list.items.filter(i => i.checked).length,
-          lastEdited: 'agora mesmo'
+          lastEdited: list.updatedAt ? list.updatedAt.toISOString() : new Date().toISOString()
         }));
         setLists(mappedLists);
         
