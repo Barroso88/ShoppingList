@@ -2941,20 +2941,30 @@ const RecipeDetail = () => {
 
   return (
     <div className="pb-32 pt-16 px-6">
-      <header className="flex items-center gap-4 mb-8">
-        <button onClick={() => setCurrentScreen('recipes')} className="w-10 h-10 bg-surface-container-low rounded-full flex items-center justify-center text-on-surface shadow-sm">
-          <ChevronLeft size={24} />
-        </button>
-        <h2 className="text-2xl font-bold text-on-surface flex-grow truncate">{recipe.title}</h2>
+      <header className="flex flex-col gap-4 mb-8">
+        <div className="flex items-start gap-3.5">
+          <button onClick={() => setCurrentScreen('recipes')} className="w-10 h-10 bg-surface-container-low rounded-full flex items-center justify-center text-on-surface shadow-sm flex-shrink-0 mt-0.5">
+            <ChevronLeft size={24} />
+          </button>
+          <div className="flex-grow min-w-0">
+            <h2 className="text-lg font-extrabold text-on-surface leading-snug break-words">
+              {recipe.title} <span className="inline-block ml-1 text-xl">{recipe.emoji}</span>
+            </h2>
+          </div>
+        </div>
         
-        <button 
-          onClick={() => setDeleteModalOpen(true)}
-          className="w-10 h-10 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center hover:bg-red-500/20 transition-all shadow-sm"
-          title="Apagar Receita"
-        >
-          <Trash2 size={18} />
-        </button>
-        <span className="text-2xl">{recipe.emoji}</span>
+        {/* Row 2: Delete action on the line below */}
+        <div className="flex items-center justify-between border-t border-outline-variant/10 pt-3">
+          <span className="text-[10px] font-bold text-outline/60 uppercase tracking-widest">Ações da Receita</span>
+          <button 
+            onClick={() => setDeleteModalOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/10 text-red-500 rounded-full font-bold text-xs hover:bg-red-500/20 active:scale-95 transition-all border border-red-500/10 shadow-sm"
+            title="Apagar Receita"
+          >
+            <Trash2 size={13} />
+            <span>Apagar Receita</span>
+          </button>
+        </div>
       </header>
 
       <section className="mb-8">
