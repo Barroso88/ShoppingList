@@ -2002,19 +2002,22 @@ const Settings = ({ theme, setTheme }: { theme: string, setTheme: (t: string) =>
                 </button>
              </div>
              
-             <div className="flex items-center justify-between border-t border-outline-variant/10 pt-4">
+             <div 
+                onClick={() => setCurrentScreen('family')}
+                className="flex items-center justify-between border-t border-outline-variant/10 pt-4 cursor-pointer group active:opacity-85 transition-all"
+             >
                 <div className="flex items-center gap-4">
-                   <div className="w-12 h-12 rounded-2xl bg-surface-container flex items-center justify-center text-[#10b981]">
+                   <div className="w-12 h-12 rounded-2xl bg-surface-container flex items-center justify-center text-[#10b981] group-hover:bg-[#10b981]/10 transition-colors">
                       <Users size={20} />
                    </div>
                    <div>
-                      <h4 className="font-bold text-on-surface">Membros da Família</h4>
+                      <h4 className="font-bold text-on-surface group-hover:text-primary transition-colors">Membros da Família</h4>
                       <p className="text-xs text-outline">{familyMembers.length} Membros Ativos</p>
                    </div>
                 </div>
                 <button 
-                  onClick={() => setCurrentScreen('family')} 
-                  className="bg-surface-container border border-outline-variant/30 px-4 py-2 rounded-xl text-xs font-bold text-on-surface hover:bg-surface-container-high transition-colors active:scale-95"
+                  type="button"
+                  className="bg-surface-container border border-outline-variant/30 px-4 py-2 rounded-xl text-xs font-bold text-on-surface hover:bg-surface-container-high transition-colors active:scale-95 pointer-events-none"
                 >
                    Ver Todos
                 </button>
