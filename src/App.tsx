@@ -53,6 +53,27 @@ const THEMES = [
   { id: 'dark-solarized', name: 'Solarized' },
 ];
 
+export const getCategoryStyle = (category: string) => {
+  switch (category) {
+    case 'Mercearia':
+      return { color: '#ff922b', bg: '#ff922b15', border: '#ff922b30', emoji: '🌾' };
+    case 'Laticínios':
+      return { color: '#339af0', bg: '#339af015', border: '#339af030', emoji: '🥛' };
+    case 'Congelados':
+      return { color: '#22b8cf', bg: '#22b8cf15', border: '#22b8cf30', emoji: '❄️' };
+    case 'Frutas e Legumes':
+      return { color: '#51cf66', bg: '#51cf6615', border: '#51cf6630', emoji: '🥦' };
+    case 'Bebidas':
+      return { color: '#cc5de8', bg: '#cc5de815', border: '#cc5de830', emoji: '🥤' };
+    case 'Higiene':
+      return { color: '#f06595', bg: '#f0659515', border: '#f0659530', emoji: '🧼' };
+    case 'Pet Shop':
+      return { color: '#ffc078', bg: '#ffc07815', border: '#ffc07830', emoji: '🐶' };
+    default:
+      return { color: '#adb5bd', bg: '#adb5bd15', border: '#adb5bd30', emoji: '📦' };
+  }
+};
+
 // --- App Context ---
 type AppContextType = {
   items: ShoppingItem[];
@@ -2280,26 +2301,7 @@ const Pantry = () => {
     }
   };
 
-  const getCategoryStyle = (category: string) => {
-    switch (category) {
-      case 'Mercearia':
-        return { color: '#ff922b', bg: '#ff922b15', border: '#ff922b30', emoji: '🌾' };
-      case 'Laticínios':
-        return { color: '#339af0', bg: '#339af015', border: '#339af030', emoji: '🥛' };
-      case 'Congelados':
-        return { color: '#22b8cf', bg: '#22b8cf15', border: '#22b8cf30', emoji: '❄️' };
-      case 'Frutas e Legumes':
-        return { color: '#51cf66', bg: '#51cf6615', border: '#51cf6630', emoji: '🥦' };
-      case 'Bebidas':
-        return { color: '#cc5de8', bg: '#cc5de815', border: '#cc5de830', emoji: '🥤' };
-      case 'Higiene':
-        return { color: '#f06595', bg: '#f0659515', border: '#f0659530', emoji: '🧼' };
-      case 'Pet Shop':
-        return { color: '#ffc078', bg: '#ffc07815', border: '#ffc07830', emoji: '🐶' };
-      default:
-        return { color: '#adb5bd', bg: '#adb5bd15', border: '#adb5bd30', emoji: '📦' };
-    }
-  };
+
 
   const filteredItems = pantryItems.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
@@ -2967,40 +2969,55 @@ const RecipeDetail = () => {
         </div>
       </header>
 
-      <section className="mb-8">
-        <p className="text-outline font-medium text-lg">{recipe.description}</p>
+      <section className="mb-8 bg-surface-container-low/50 border-l-4 border-primary/45 p-4 rounded-r-2xl">
+        <p className="text-xs font-semibold italic text-outline/90 leading-relaxed">{recipe.description}</p>
       </section>
 
       <section className="mb-10">
-        <h3 className="text-xl font-bold text-on-surface mb-4">Ingredientes</h3>
-        <div className="bg-surface-container-low rounded-3xl p-5 border border-outline-variant/10 flex flex-col gap-3">
-          {recipe.ingredients.map((ing, idx) => (
-            <div key={idx} className="flex justify-between items-center border-b border-outline-variant/10 pb-3 last:border-0 last:pb-0">
-               <span className="font-medium text-on-surface">{ing.name}</span>
-               <span className="text-sm font-bold bg-surface px-3 py-1 rounded-full text-primary">{ing.quantity}</span>
-            </div>
-          ))}
+        <div className="px-1 mb-4 flex items-center justify-between">
+          <h3 className="text-xs font-bold uppercase tracking-widest text-on-surface/80">Ingredientes</h3>
+          <span className="text-[10px] font-bold text-primary bg-primary/10 px-2.5 py-0.5 rounded-full uppercase tracking-wider">{recipe.ingredients.length} itens</span>
+        </div>
+        <div className="bg-surface-container-low rounded-[32px] p-6 border border-outline-variant/10 flex flex-col gap-4 shadow-sm">
+          {recipe.ingredients.map((ing, idx) => {
+            const style = getCategoryStyle(ing.category || 'Outros');
+            return (
+              <div key={idx} className="flex justify-between items-center border-b border-outline-variant/5 pb-3.5 last:border-0 last:pb-0">
+                 <div className="flex items-center min-w-0">
+                   <span className="text-sm mr-2.5 flex-shrink-0" title={ing.category}>{style.emoji}</span>
+                   <span className="font-semibold text-sm text-on-surface truncate">{ing.name}</span>
+                 </div>
+                 <span className="text-xs font-bold bg-surface border border-outline-variant/15 px-3 py-1 rounded-xl text-primary shadow-sm flex-shrink-0 ml-2">
+                   {ing.quantity}
+                 </span>
+              </div>
+            );
+          })}
         </div>
         <button 
           onClick={handleAddIngredients}
-          className="w-full mt-4 h-14 bg-primary text-white rounded-2xl font-bold active:scale-95 transition-all text-sm flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
+          className="w-full mt-4 h-13 bg-gradient-to-r from-primary to-primary-container text-white rounded-2xl font-extrabold active:scale-95 transition-all text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
         >
-          <ShoppingCart size={18} /> Adicionar à Lista de Compras
+          <ShoppingCart size={16} /> Adicionar à Lista de Compras
         </button>
       </section>
 
       <section>
-        <h3 className="text-xl font-bold text-on-surface mb-4">Preparação</h3>
-        <div className="space-y-4">
+        <div className="px-1 mb-4">
+          <h3 className="text-xs font-bold uppercase tracking-widest text-on-surface/80">Preparação</h3>
+        </div>
+        <div className="space-y-3">
           {recipe.instructions && recipe.instructions.length > 0 ? recipe.instructions.map((step, idx) => (
-             <div key={idx} className="bg-surface-container-low p-5 rounded-[24px] border border-outline-variant/10 flex gap-4">
-                <div className="w-8 h-8 rounded-full bg-primary text-white font-bold flex items-center justify-center flex-shrink-0">
+             <div key={idx} className="bg-surface-container-low p-5 rounded-[28px] border border-outline-variant/10 flex gap-4 shadow-sm relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-primary to-primary-container opacity-30"></div>
+                
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-primary to-primary-container text-white font-extrabold flex items-center justify-center flex-shrink-0 text-sm shadow-md shadow-primary/20">
                   {idx + 1}
                 </div>
-                <p className="text-on-surface font-medium leading-relaxed">{step}</p>
+                <p className="text-sm font-semibold text-on-surface/90 leading-relaxed pt-0.5">{step}</p>
              </div>
           )) : (
-             <p className="text-outline italic">Instruções não disponíveis para esta receita.</p>
+             <p className="text-xs text-outline italic text-center py-6">Instruções não disponíveis para esta receita.</p>
           )}
         </div>
       </section>
