@@ -2367,41 +2367,73 @@ const Pantry = () => {
           Novo Produto na Despensa
         </h3>
         <form onSubmit={handleAddItem} className="space-y-3">
-          {/* Row 1: Product Name Input (100% Width) */}
-          <div className="relative">
-            <input 
-              type="text" 
-              placeholder="Ex: Arroz, Massa, Leite..." 
-              value={newItemName}
-              onChange={e => setNewItemName(e.target.value)}
-              className="w-full bg-surface/40 border border-outline-variant/20 rounded-2xl pl-4 pr-11 py-3.5 text-sm text-on-surface outline-none focus:border-[#20c997] transition-all font-medium placeholder:text-outline/40 backdrop-blur-sm shadow-sm"
-            />
+          {/* Row 1: Product Name Input and Add Button on the right */}
+          <div className="flex gap-2">
+            <div className="relative flex-grow min-w-0">
+              <input 
+                type="text" 
+                placeholder="Ex: Arroz, Massa, Leite..." 
+                value={newItemName}
+                onChange={e => setNewItemName(e.target.value)}
+                className="w-full bg-surface/40 border border-outline-variant/20 rounded-2xl pl-4 pr-11 py-3.5 text-sm text-on-surface outline-none focus:border-[#20c997] transition-all font-medium placeholder:text-outline/40 backdrop-blur-sm shadow-sm"
+              />
+              <button 
+                type="button" 
+                onClick={startListening} 
+                className={`absolute right-3.5 top-3.5 transition-colors ${isListening ? 'text-red-500 animate-pulse' : 'text-outline hover:text-[#20c997]'}`}
+              >
+                <Mic size={18} />
+              </button>
+            </div>
+            
+            {/* Submit Plus Button */}
             <button 
-              type="button" 
-              onClick={startListening} 
-              className={`absolute right-3.5 top-3.5 transition-colors ${isListening ? 'text-red-500 animate-pulse' : 'text-outline hover:text-[#20c997]'}`}
+              type="submit"
+              disabled={!newItemName.trim()}
+              className="bg-gradient-to-r from-[#20c997] to-[#00f3ff] hover:brightness-110 text-white rounded-2xl transition-all flex items-center justify-center active:scale-95 disabled:opacity-50 flex-shrink-0 soft-shadow shadow-[#20c997]/25 w-12 h-12"
+              title="Adicionar à Despensa"
             >
-              <Mic size={18} />
+              <Plus size={22} strokeWidth={3} />
             </button>
           </div>
 
-          {/* Row 2: Quantity, Category and Submit Button */}
-          <div className="flex gap-2">
-            {/* Quantity Input */}
-            <input 
-              type="text" 
-              placeholder="Qtd (ex: 2)" 
-              value={newItemQty}
-              onChange={e => setNewItemQty(e.target.value)}
-              className="w-24 bg-surface/40 border border-outline-variant/20 rounded-2xl px-2 py-3.5 text-sm text-on-surface text-center outline-none focus:border-[#20c997] transition-all font-bold backdrop-blur-sm shadow-sm placeholder:text-outline/40 placeholder:font-normal"
-            />
+          {/* Row 2: Premium Quantity Selector with +/- buttons and flexible Category Dropdown */}
+          <div className="flex items-center gap-2 mt-1">
+            {/* Quantity Selector with - and + */}
+            <div className="flex items-center bg-surface/40 border border-outline-variant/20 rounded-2xl p-1 gap-2 backdrop-blur-sm shadow-sm flex-shrink-0">
+              <button 
+                type="button"
+                onClick={() => {
+                  const current = parseFloat(newItemQty) || 1;
+                  if (current > 1) {
+                    setNewItemQty(String(current - 1));
+                  }
+                }}
+                className="w-10 h-10 bg-surface-container rounded-xl flex items-center justify-center text-on-surface hover:text-[#20c997] active:scale-90 transition-all font-extrabold"
+              >
+                <Minus size={14} strokeWidth={2.5} />
+              </button>
+              <span className="text-sm font-extrabold w-6 text-center text-on-surface select-none">
+                {newItemQty}
+              </span>
+              <button 
+                type="button"
+                onClick={() => {
+                  const current = parseFloat(newItemQty) || 1;
+                  setNewItemQty(String(current + 1));
+                }}
+                className="w-10 h-10 bg-surface-container rounded-xl flex items-center justify-center text-on-surface hover:text-[#20c997] active:scale-90 transition-all font-extrabold"
+              >
+                <Plus size={14} strokeWidth={2.5} />
+              </button>
+            </div>
 
             {/* Category Select Dropdown */}
-            <div className="relative flex-grow min-w-0">
+            <div className="relative flex-grow min-w-[140px]">
               <select 
                 value={newItemCategory}
                 onChange={e => setNewItemCategory(e.target.value)}
-                className="w-full bg-surface/40 border border-outline-variant/20 rounded-2xl pl-4 pr-9 py-3.5 text-sm text-on-surface outline-none focus:border-[#20c997] transition-all font-medium appearance-none cursor-pointer backdrop-blur-sm shadow-sm"
+                className="w-full bg-surface/40 border border-outline-variant/20 rounded-2xl pl-3.5 pr-10 py-3 text-sm text-on-surface outline-none focus:border-[#20c997] transition-all font-medium appearance-none cursor-pointer backdrop-blur-sm shadow-sm"
               >
                 {categories.map(cat => (
                   <option key={cat} value={cat}>{getCategoryStyle(cat).emoji} {cat}</option>
@@ -2409,15 +2441,6 @@ const Pantry = () => {
               </select>
               <ChevronDown size={14} className="absolute right-3.5 top-4.5 text-outline pointer-events-none" />
             </div>
-
-            {/* Add Button */}
-            <button 
-              type="submit"
-              disabled={!newItemName.trim()}
-              className="bg-gradient-to-r from-[#20c997] to-[#00f3ff] hover:brightness-110 text-white font-bold text-sm px-5 rounded-2xl transition-all flex items-center justify-center gap-1.5 active:scale-95 disabled:opacity-50 flex-shrink-0 soft-shadow shadow-[#20c997]/25"
-            >
-              <Plus size={18} strokeWidth={3} />
-            </button>
           </div>
         </form>
       </section>
