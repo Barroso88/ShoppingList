@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, createContext, useContext, useRef } from 'react';
 import { signIn, signOut, useSession } from 'next-auth/react';
-import { getLists, createList as dbCreateList, deleteList as dbDeleteList, addItem as dbAddItem, toggleItemChecked as dbToggleItemChecked, updateItemQuantity as dbUpdateItemQuantity, updateItemName as dbUpdateItemName, deleteItem as dbDeleteItem, getRecipes, saveRecipe as dbSaveRecipe, deleteRecipe as dbDeleteRecipe, getActivities, logActivity, generateRecipeWithAI, getFamilyMembers as dbGetFamilyMembers, getFamilyCode as dbGetFamilyCode, updateFamilyCode as dbUpdateFamilyCode, getPantryItems as dbGetPantryItems, addPantryItem as dbAddPantryItem, updatePantryItemQuantity as dbUpdatePantryItemQuantity, updatePantryItemName as dbUpdatePantryItemName, deletePantryItem as dbDeletePantryItem } from '@/app/actions';
+import { getLists, createList as dbCreateList, deleteList as dbDeleteList, addItem as dbAddItem, toggleItemChecked as dbToggleItemChecked, updateItemQuantity as dbUpdateItemQuantity, updateItemName as dbUpdateItemName, deleteItem as dbDeleteItem, getRecipes, saveRecipe as dbSaveRecipe, deleteRecipe as dbDeleteRecipe, getActivities, logActivity, generateRecipeWithAI, getFamilyMembers as dbGetFamilyMembers, getFamilyCode as dbGetFamilyCode, updateFamilyCode as dbUpdateFamilyCode, getPantryItems as dbGetPantryItems, addPantryItem as dbAddPantryItem, updatePantryItemQuantity as dbUpdatePantryItemQuantity, updatePantryItemName as dbUpdatePantryItemName, deletePantryItem as dbDeletePantryItem, syncUserProfile } from '@/app/actions';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Home, 
@@ -3317,6 +3317,20 @@ export default function App() {
     } else if (status === 'unauthenticated') {
       setCurrentScreen('onboarding');
       setFamilyMembers([]);
+    }
+  }, [status, session]);
+
+  // Sync profile picture dynamically when Google photo changes
+  useEffect(() => {
+    if (status === 'authenticated' && session?.user?.email && session?.user?.image) {
+      syncUserProfile(session.user.email, session.user.image)
+        .then(() => {
+          return dbGetFamilyMembers();
+        })
+        .then(members => {
+          if (members) setFamilyMembers(members);
+        })
+        .catch(err => console.error("Error syncing profile picture:", err));
     }
   }, [status, session]);
 

@@ -285,3 +285,23 @@ export async function deletePantryItem(id: string) {
   });
   revalidatePath("/");
 }
+
+export async function syncUserProfile(email: string, image: string) {
+  if (!email || !image) return;
+  try {
+    const trimmedEmail = email.trim().toLowerCase();
+    const user = await prisma.user.findFirst({
+      where: { email: trimmedEmail }
+    });
+    if (user && user.image !== image) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { image }
+      });
+      revalidatePath("/");
+    }
+  } catch (e) {
+    console.error("Error syncing profile image:", e);
+  }
+}
+
