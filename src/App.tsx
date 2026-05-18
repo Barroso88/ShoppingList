@@ -3054,27 +3054,39 @@ export default function App() {
 
   const isNavigatingFromHistoryRef = useRef(false);
 
-  // Sync state changes TO browser history
+  const lastStateRef = useRef({ currentScreen, activeListId, activeRecipeId });
+  lastStateRef.current = { currentScreen, activeListId, activeRecipeId };
+
+  // Sync state changes TO browser history (debounced by a microtask to handle react state batching)
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    const histState = window.history.state;
-    const matchesHistory = 
-      histState && 
-      histState.currentScreen === currentScreen &&
-      histState.activeListId === activeListId &&
-      histState.activeRecipeId === activeRecipeId;
+    const timer = setTimeout(() => {
+      const targetState = lastStateRef.current;
+      const histState = window.history.state;
+      const matchesHistory = 
+        histState && 
+        histState.currentScreen === targetState.currentScreen &&
+        histState.activeListId === targetState.activeListId &&
+        histState.activeRecipeId === targetState.activeRecipeId;
 
-    if (!matchesHistory) {
-      if (isNavigatingFromHistoryRef.current) {
-        isNavigatingFromHistoryRef.current = false;
-      } else {
-        window.history.pushState(
-          { currentScreen, activeListId, activeRecipeId },
-          ''
-        );
+      if (!matchesHistory) {
+        if (isNavigatingFromHistoryRef.current) {
+          isNavigatingFromHistoryRef.current = false;
+        } else {
+          window.history.pushState(
+            { 
+              currentScreen: targetState.currentScreen, 
+              activeListId: targetState.activeListId, 
+              activeRecipeId: targetState.activeRecipeId 
+            },
+            ''
+          );
+        }
       }
-    }
+    }, 0);
+
+    return () => clearTimeout(timer);
   }, [currentScreen, activeListId, activeRecipeId]);
 
   // Sync popstate (mobile physical back button) back TO react state
