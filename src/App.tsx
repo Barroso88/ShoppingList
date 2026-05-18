@@ -2166,29 +2166,51 @@ const Pantry = () => {
     const name = newItemName.trim();
     const qty = newItemQty.trim() || '1';
     const cat = newItemCategory;
-    const tempId = 'temp_' + Math.random().toString(36).substr(2, 9);
 
-    const newItem: PantryItem = {
-      id: tempId,
-      name,
-      quantity: qty,
-      category: cat
-    };
+    const existingPantryItem = pantryItems.find(
+      item => item.name.trim().toLowerCase() === name.toLowerCase()
+    );
 
-    setPantryItems(prev => [newItem, ...prev]);
-    setNewItemName('');
-    setNewItemQty('1');
+    if (existingPantryItem) {
+      const newQty = sumQuantities(existingPantryItem.quantity, qty);
+      setPantryItems(prev => prev.map(pi => pi.id === existingPantryItem.id ? { ...pi, quantity: newQty } : pi));
+      setNewItemName('');
+      setNewItemQty('1');
 
-    try {
-      if (session?.user?.name) {
-        logActivity('Adicionou à Despensa', `${qty}x ${name}`, session.user.name).catch(console.error);
+      try {
+        if (session?.user?.name) {
+          logActivity('Atualizou Despensa', `${newQty}x ${existingPantryItem.name}`, session.user.name).catch(console.error);
+        }
+        await dbUpdatePantryItemQuantity(existingPantryItem.id, newQty);
+      } catch (err) {
+        console.error(err);
+        setPantryItems(prev => prev.map(pi => pi.id === existingPantryItem.id ? { ...pi, quantity: existingPantryItem.quantity } : pi));
+        alert("Erro ao atualizar quantidade do item na despensa.");
       }
-      const dbItem = await dbAddPantryItem(name, qty, cat);
-      setPantryItems(prev => prev.map(item => item.id === tempId ? dbItem : item));
-    } catch (err) {
-      console.error(err);
-      setPantryItems(prev => prev.filter(item => item.id !== tempId));
-      alert("Erro ao adicionar item à despensa.");
+    } else {
+      const tempId = 'temp_' + Math.random().toString(36).substr(2, 9);
+      const newItem: PantryItem = {
+        id: tempId,
+        name,
+        quantity: qty,
+        category: cat
+      };
+
+      setPantryItems(prev => [newItem, ...prev]);
+      setNewItemName('');
+      setNewItemQty('1');
+
+      try {
+        if (session?.user?.name) {
+          logActivity('Adicionou à Despensa', `${qty}x ${name}`, session.user.name).catch(console.error);
+        }
+        const dbItem = await dbAddPantryItem(name, qty, cat);
+        setPantryItems(prev => prev.map(item => item.id === tempId ? dbItem : item));
+      } catch (err) {
+        console.error(err);
+        setPantryItems(prev => prev.filter(item => item.id !== tempId));
+        alert("Erro ao adicionar item à despensa.");
+      }
     }
   };
 
